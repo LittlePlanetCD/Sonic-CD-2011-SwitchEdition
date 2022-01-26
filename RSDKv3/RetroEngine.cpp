@@ -296,9 +296,11 @@ void RetroEngine::Run()
 
     while (running) {
 #if !RETRO_USE_ORIGINAL_CODE
-        if (SDL_GetPerformanceCounter() < curTicks + targetFreq)
-            continue;
-        curTicks = SDL_GetPerformanceCounter();
+        if (!vsync) {
+            if (SDL_GetPerformanceCounter() < curTicks + targetFreq)
+                continue;
+            curTicks = SDL_GetPerformanceCounter();
+        }
 #endif
         running = processEvents();
 
@@ -918,11 +920,18 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
             }
         }
 
-        // Temp maybe?
-        if (controlMode >= 0) {
-            saveRAM[35] = controlMode;
-            SetGlobalVariableByName("Options.OriginalControls", controlMode);
+#if !RETRO_USE_ORIGINAL_CODE
+#if RETRO_USE_MOD_LOADER
+        if (!disableSaveIniOverride) {
+#endif
+            if (controlMode >= 0) {
+                saveRAM[35] = controlMode;
+                SetGlobalVariableByName("Options.OriginalControls", controlMode);
+            }
+#if RETRO_USE_MOD_LOADER
         }
+#endif
+#endif
 
         CloseFile();
 #if RETRO_USE_MOD_LOADER
@@ -932,6 +941,18 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
         LoadXMLPlayers(NULL);
         LoadXMLStages(NULL, 0);
 #endif
+
+#if !RETRO_USE_ORIGINAL_CODE
+        if (strlen(Engine.startSceneFolder) && strlen(Engine.startSceneID)) {
+            SceneInfo *scene = &stageList[STAGELIST_BONUS][0xFE]; // slot 0xFF is used for "none" startStage
+            strcpy(scene->name, "_RSDK_SCENE");
+            strcpy(scene->folder, Engine.startSceneFolder);
+            strcpy(scene->id, Engine.startSceneID);
+            startList_Game  = STAGELIST_BONUS;
+            startStage_Game = 0xFE;
+        }
+#endif
+
         return true;
     }
 
@@ -992,7 +1013,7 @@ void RetroEngine::Callback(int callbackID)
             printLog("Callback: Buy Full Game Selected");
             break;
         case CALLBACK_TERMS_SELECTED: // PC = How to play, Mobile = Full Game Only Screen
-            // Uncomment when Hi Res mode is added
+            //PC doesn't have hi res mode
             /*if (bytecodeMode == BYTECODE_PC) {
                 for (int s = 0; s < stageListCount[STAGELIST_PRESENTATION]; ++s) {
                     if (StrComp("HELP", stageList[STAGELIST_PRESENTATION][s].name)) {

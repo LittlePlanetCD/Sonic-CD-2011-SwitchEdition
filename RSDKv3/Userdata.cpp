@@ -117,9 +117,16 @@ bool ReadSaveRAMData()
 #endif
 #endif
 
-    // Temp(?)
-    saveRAM[33] = bgmVolume;
-    saveRAM[34] = sfxVolume;
+#if !RETRO_USE_ORIGINAL_CODE
+#if RETRO_USE_MOD_LOADER
+    if (!disableSaveIniOverride) {
+#endif
+	    saveRAM[33] = bgmVolume;
+	    saveRAM[34] = sfxVolume;
+#if RETRO_USE_MOD_LOADER
+    }
+#endif
+#endif
 
     FileIO *saveFile = fOpen(buffer, "rb");
     if (!saveFile) {
@@ -228,9 +235,16 @@ bool WriteSaveRAMData()
     if (!saveFile)
         return false;
 
-    // Temp
-    saveRAM[33] = bgmVolume;
-    saveRAM[34] = sfxVolume;
+#if !RETRO_USE_ORIGINAL_CODE
+#if RETRO_USE_MOD_LOADER
+    if (!disableSaveIniOverride) {
+#endif
+	    saveRAM[33] = bgmVolume;
+	    saveRAM[34] = sfxVolume;
+#if RETRO_USE_MOD_LOADER
+    }
+#endif
+#endif
 
     fWrite(saveRAM, 4, SAVEDATA_MAX, saveFile);
     fClose(saveFile);
@@ -299,6 +313,9 @@ void InitUserdata()
         ini.SetBool("Dev", "UseHQModes", Engine.useHQModes = true);
         sprintf(Engine.dataFile, "%s", "Data.rsdk");
         ini.SetString("Dev", "DataFile", Engine.dataFile);
+
+        Engine.startList_Game  = Engine.startList;
+        Engine.startStage_Game = Engine.startStage;
 
         ini.SetInteger("Game", "Language", Engine.language = RETRO_EN);
         ini.SetInteger("Game", "OriginalControls", controlMode = -1);
@@ -403,6 +420,9 @@ void InitUserdata()
             Engine.useSteamDir = true;
         if (!ini.GetBool("Dev", "UseHQModes", &Engine.useHQModes))
             Engine.useHQModes = true;
+
+        Engine.startList_Game  = Engine.startList;
+        Engine.startStage_Game = Engine.startStage;
 
         if (!ini.GetString("Dev", "DataFile", Engine.dataFile))
             StrCopy(Engine.dataFile, "Data.rsdk");

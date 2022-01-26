@@ -1,47 +1,70 @@
 #include "RetroEngine.hpp"
 
-#ifdef NXLINK
-#include <switch.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/errno.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+#if !RETRO_USE_ORIGINAL_CODE
 
-static int s_nxlinkSock = -1;
+#if RETRO_PLATFORM == RETRO_WIN
+#include "Windows.h"
+#endif
 
-static void initNxLink()
+void parseArguments(int argc, char *argv[])
 {
-    if (R_FAILED(socketInitializeDefault()))
-        return;
+    for (int a = 0; a < argc; ++a) {
+        const char *find = "";
 
-    s_nxlinkSock = nxlinkStdio();
-    if (s_nxlinkSock >= 0)
-        printf("printf output now goes to nxlink server\n");
-    else
-        socketExit();
+        find = strstr(argv[a], "stage=");
+        if (find) {
+            int b = 0;
+            int c = 6;
+            while (find[c] && find[c] != ';') Engine.startSceneFolder[b++] = find[c++];
+            Engine.startSceneFolder[b] = 0;
+        }
+
+        find = strstr(argv[a], "scene=");
+        if (find) {
+            int b = 0;
+            int c = 6;
+            while (find[c] && find[c] != ';') Engine.startSceneID[b++] = find[c++];
+            Engine.startSceneID[b] = 0;
+        }
+
+        find = strstr(argv[a], "console=true");
+        if (find) {
+            engineDebugMode       = true;
+            Engine.devMenu        = true;
+            Engine.consoleEnabled = true;
+#if RETRO_PLATFORM == RETRO_WIN
+            AllocConsole();
+            freopen_s((FILE **)stdin, "CONIN$", "w", stdin);
+            freopen_s((FILE **)stdout, "CONOUT$", "w", stdout);
+            freopen_s((FILE **)stderr, "CONOUT$", "w", stderr);
+#endif
+        }
+
+        find = strstr(argv[a], "usingCWD=true");
+        if (find) {
+            usingCWD = true;
+        }
+    }
 }
 #endif
 
 int main(int argc, char *argv[])
 {
-    #ifdef NXLINK
-        initNxLink();
-    #endif
-
-    for (int i = 0; i < argc; ++i) {
-        if (StrComp(argv[i], "UsingCWD"))
-            usingCWD = true;
-    }
+#if !RETRO_USE_ORIGINAL_CODE
+    parseArguments(argc, argv);
+#endif
 
     Engine.Init();
     Engine.Run();
 
-    #ifdef NXLINK
-        socketExit();
-    #endif
+#if !RETRO_USE_ORIGINAL_CODE
+    if (Engine.consoleEnabled) {
+#if RETRO_PLATFORM == RETRO_WIN
+        FreeConsole();
+#endif
+    }
+#endif
+
 
     return 0;
 }
