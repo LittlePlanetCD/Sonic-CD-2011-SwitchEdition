@@ -148,11 +148,7 @@ enum AndroidHapticIDs {
 #include <vector>
 
 InputButton inputDevice[INPUT_MAX];
-#if RETRO_PLATFORM == RETRO_SWITCH
-int inputType = 1;
-#else
 int inputType = 0;
-#endif
 
 // mania deadzone vals lol
 float LSTICK_DEADZONE   = 0.3;
@@ -182,11 +178,12 @@ bool getControllerButton(byte buttonID)
     bool pressed = false;
 
     for (int i = 0; i < controllers.size(); ++i) {
+		if (pressed) break;
         SDL_GameController *controller = controllers[i];
 
         if (SDL_GameControllerGetButton(controller, (SDL_GameControllerButton)buttonID)) {
             pressed |= true;
-            continue;
+            break;
         }
         else {
             switch (buttonID) {
@@ -411,7 +408,7 @@ void ProcessInput()
     if (inputDevice[INPUT_ANY].press || inputDevice[INPUT_ANY].hold || touches > 1) {
         Engine.dimTimer = 0;
     }
-    else if (Engine.dimTimer < Engine.dimLimit) {
+    else if (Engine.dimTimer < Engine.dimLimit && !Engine.masterPaused) {
         ++Engine.dimTimer;
     }
 
@@ -421,7 +418,7 @@ void ProcessInput()
         int mx = 0, my = 0;
         SDL_GetMouseState(&mx, &my);
 
-        if ((mx == lastMouseX && my == lastMouseY)) {
+        if (mx == lastMouseX && my == lastMouseY) {
             ++mouseHideTimer;
             if (mouseHideTimer == 120) {
                 SDL_ShowCursor(false);

@@ -386,6 +386,7 @@ void FlipScreen()
         return;
 
 #if !RETRO_USE_ORIGINAL_CODE
+#if RETRO_PLATFORM != RETRO_SWITCH //switch doesn't need this it's builtin
     if (Engine.dimTimer < Engine.dimLimit) {
         if (Engine.dimPercent < 1.0) {
             Engine.dimPercent += 0.05;
@@ -396,7 +397,7 @@ void FlipScreen()
     else if (Engine.dimPercent > 0.25 && Engine.dimLimit >= 0) {
         Engine.dimPercent *= 0.9;
     }
-
+#endif //! RETRO_PLATFORM != RETRO_SWITCH
     float dimAmount = Engine.dimMax * Engine.dimPercent;
 #endif
 

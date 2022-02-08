@@ -30,6 +30,10 @@ inline int getLowerRate(int intendRate, int targetRate)
     return result;
 }
 
+#if RETRO_PLATFORM == RETRO_SWITCH
+int devDownTimer = 0;
+#endif
+
 bool processEvents()
 {
 #if RETRO_USING_SDL1 || RETRO_USING_SDL2
@@ -886,6 +890,7 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
 #if RETRO_USE_MOD_LOADER
             strBuffer[fileBuffer] = 0;
             StrCopy(playerNames[p], strBuffer);
+            playerCount++;
 #endif
         }
 

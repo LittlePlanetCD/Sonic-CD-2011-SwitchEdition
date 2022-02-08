@@ -331,7 +331,7 @@ void InitUserdata()
         ini.SetBool("Window", "VSync", Engine.vsync = false);
         #endif
         ini.SetInteger("Window", "ScalingMode", Engine.scalingMode = 0);
-        ini.SetInteger("Window", "WindowScale", Engine.windowScale = 2);
+        ini.SetInteger("Window", "WindowScale", Engine.windowScale = 4);
         ini.SetInteger("Window", "ScreenWidth", SCREEN_XSIZE = DEFAULT_SCREEN_XSIZE);
         SCREEN_XSIZE_CONFIG = SCREEN_XSIZE;
         ini.SetInteger("Window", "RefreshRate", Engine.refreshRate = 60);
