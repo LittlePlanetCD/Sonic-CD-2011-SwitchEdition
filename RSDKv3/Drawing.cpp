@@ -6817,8 +6817,8 @@ void DrawTextMenuEntry(void *menu, int rowID, int XPos, int YPos, int textHighli
     TextMenu *tMenu = (TextMenu *)menu;
     int id          = tMenu->entryStart[rowID];
     for (int i = 0; i < tMenu->entrySize[rowID]; ++i) {
-        DrawSprite(XPos + (i << 3), YPos, 8, 8, (int)((int)(tMenu->textData[id] & 0xF) << 3),
-                   (int)((int)(tMenu->textData[id] >> 4) << 3) + textHighlight, textMenuSurfaceNo);
+        DrawSprite(XPos + (i << 3), YPos, 8, 8, ((tMenu->textData[id] & 0xF) << 3), ((tMenu->textData[id] >> 4) << 3) + textHighlight,
+                   textMenuSurfaceNo);
         id++;
     }
 }
@@ -6828,12 +6828,11 @@ void DrawStageTextEntry(void *menu, int rowID, int XPos, int YPos, int textHighl
     int id          = tMenu->entryStart[rowID];
     for (int i = 0; i < tMenu->entrySize[rowID]; ++i) {
         if (i == tMenu->entrySize[rowID] - 1) {
-            DrawSprite(XPos + (i << 3), YPos, 8, 8, (int)((int)(tMenu->textData[id] & 0xF) << 3), (int)((int)(tMenu->textData[id] >> 4) << 3),
-                       textMenuSurfaceNo);
+            DrawSprite(XPos + (i << 3), YPos, 8, 8, ((tMenu->textData[id] & 0xF) << 3), ((tMenu->textData[id] >> 4) << 3), textMenuSurfaceNo);
         }
         else {
-            DrawSprite(XPos + (i << 3), YPos, 8, 8, (int)((int)(tMenu->textData[id] & 0xF) << 3),
-                       (int)((int)(tMenu->textData[id] >> 4) << 3) + textHighlight, textMenuSurfaceNo);
+            DrawSprite(XPos + (i << 3), YPos, 8, 8, ((tMenu->textData[id] & 0xF) << 3), ((tMenu->textData[id] >> 4) << 3) + textHighlight,
+                       textMenuSurfaceNo);
         }
         id++;
     }
@@ -6843,8 +6842,8 @@ void DrawBlendedTextMenuEntry(void *menu, int rowID, int XPos, int YPos, int tex
     TextMenu *tMenu = (TextMenu *)menu;
     int id          = tMenu->entryStart[rowID];
     for (int i = 0; i < tMenu->entrySize[rowID]; ++i) {
-        DrawBlendedSprite(XPos + (i << 3), YPos, 8, 8, (int)((int)(tMenu->textData[id] & 0xF) << 3),
-                          (int)((int)(tMenu->textData[id] >> 4) << 3) + textHighlight, textMenuSurfaceNo);
+        DrawBlendedSprite(XPos + (i << 3), YPos, 8, 8, ((tMenu->textData[id] & 0xF) << 3), ((tMenu->textData[id] >> 4) << 3) + textHighlight,
+                          textMenuSurfaceNo);
         id++;
     }
 }
@@ -6892,6 +6891,7 @@ void DrawTextMenu(void *menu, int XPos, int YPos)
                             DrawTextMenuEntry(tMenu, i, XPos, YPos, 128);
                         else
                             DrawTextMenuEntry(tMenu, i, XPos, YPos, 0);
+
                         if (i == tMenu->selection2 && i != tMenu->selection1)
                             DrawStageTextEntry(tMenu, i, XPos, YPos, 128);
                         break;
@@ -6910,17 +6910,20 @@ void DrawTextMenu(void *menu, int XPos, int YPos)
                         else
                             DrawTextMenuEntry(tMenu, i, entryX, YPos, 0);
                         break;
+
                     case 2:
                         if (i == tMenu->selection1 || i == tMenu->selection2)
                             DrawTextMenuEntry(tMenu, i, entryX, YPos, 128);
                         else
                             DrawTextMenuEntry(tMenu, i, entryX, YPos, 0);
                         break;
+
                     case 3:
                         if (i == tMenu->selection1)
                             DrawTextMenuEntry(tMenu, i, entryX, YPos, 128);
                         else
                             DrawTextMenuEntry(tMenu, i, entryX, YPos, 0);
+
                         if (i == tMenu->selection2 && i != tMenu->selection1)
                             DrawStageTextEntry(tMenu, i, entryX, YPos, 128);
                         break;
@@ -6939,12 +6942,14 @@ void DrawTextMenu(void *menu, int XPos, int YPos)
                         else
                             DrawTextMenuEntry(tMenu, i, entryX, YPos, 0);
                         break;
+
                     case 2:
                         if (i == tMenu->selection1 || i == tMenu->selection2)
                             DrawTextMenuEntry(tMenu, i, entryX, YPos, 128);
                         else
                             DrawTextMenuEntry(tMenu, i, entryX, YPos, 0);
                         break;
+
                     case 3:
                         if (i == tMenu->selection1)
                             DrawTextMenuEntry(tMenu, i, entryX, YPos, 128);
