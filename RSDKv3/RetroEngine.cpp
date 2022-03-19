@@ -126,6 +126,7 @@ bool processEvents()
             case SDL_KEYDOWN:
                 switch (Engine.sdlEvents.key.keysym.sym) {
                     default: break;
+
                     case SDLK_ESCAPE:
                         if (Engine.devMenu) {
 #if RETRO_USE_MOD_LOADER
@@ -138,10 +139,7 @@ bool processEvents()
                             Engine.gameMode = ENGINE_INITDEVMENU;
                         }
                         break;
-                    case SDLK_F4:
-                        Engine.isFullScreen ^= 1;
-                        setFullScreen(Engine.isFullScreen);
-                        break;
+
                     case SDLK_F1:
                         if (Engine.devMenu) {
                             activeStageList   = 0;
@@ -150,6 +148,7 @@ bool processEvents()
                             Engine.gameMode   = ENGINE_MAINGAME;
                         }
                         break;
+
                     case SDLK_F2:
                         if (Engine.devMenu) {
                             stageListPosition--;
@@ -167,6 +166,7 @@ bool processEvents()
                             SetGlobalVariableByName("Warp.XPos", 0);
                         }
                         break;
+
                     case SDLK_F3:
                         if (Engine.devMenu) {
                             stageListPosition++;
@@ -185,23 +185,45 @@ bool processEvents()
                             SetGlobalVariableByName("Warp.XPos", 0);
                         }
                         break;
+
+                    case SDLK_F4:
+                        Engine.isFullScreen ^= 1;
+                        setFullScreen(Engine.isFullScreen);
+                        break;
+
+                    case SDLK_F5:
+                        if (Engine.devMenu) {
+                            currentStageFolder[0] = 0; // reload all assets & scripts
+                            stageMode             = STAGEMODE_LOAD;
+                        }
+                        break;
+
+                    case SDLK_F8:
+                        if (Engine.devMenu)
+                            showHitboxes ^= 2;
+                        break;
+
                     case SDLK_F9:
                         if (Engine.devMenu)
                             showHitboxes ^= 1;
                         break;
+
                     case SDLK_F10:
                         if (Engine.devMenu)
                             Engine.showPaletteOverlay ^= 1;
                         break;
+
                     case SDLK_BACKSPACE:
                         if (Engine.devMenu)
                             Engine.gameSpeed = Engine.fastForwardSpeed;
                         break;
+
 #if RETRO_PLATFORM == RETRO_OSX
                     case SDLK_F6:
                         if (Engine.masterPaused)
                             Engine.frameStep = true;
                         break;
+
                     case SDLK_F7:
                         if (Engine.devMenu)
                             Engine.masterPaused ^= 1;
@@ -212,6 +234,7 @@ bool processEvents()
                         if (Engine.masterPaused)
                             Engine.frameStep = true;
                         break;
+
                     case SDLK_F12:
                     case SDLK_PAUSE:
                         if (Engine.devMenu)
