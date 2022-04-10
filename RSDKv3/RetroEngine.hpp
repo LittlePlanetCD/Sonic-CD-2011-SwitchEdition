@@ -206,11 +206,11 @@ enum RetroStates {
 };
 
 enum RetroEngineMessages {
-    MESSAGE_NONE      = 0,
-    MESSAGE_MESSAGE_1 = 1,
-    MESSAGE_LOSTFOCUS = 2,
-    MESSAGE_MESSAGE_3 = 3,
-    MESSAGE_MESSAGE_4 = 4,
+    MESSAGE_NONE         = 0,
+    MESSAGE_MESSAGE_1    = 1,
+    MESSAGE_LOSTFOCUS    = 2,
+    MESSAGE_YES_SELECTED = 3, // Used for old android confirmation popups
+    MESSAGE_NO_SELECTED  = 4, // Used for old android confirmation popups
 };
 
 enum RetroEngineCallbacks {
@@ -330,8 +330,11 @@ public:
             gamePlatform = "Mobile";
     }
 
+#if !RETRO_USE_ORIGINAL_CODE
+    bool usingDataFile_Config = false;
+    bool usingDataFileStore   = false;
+#endif
     bool usingDataFile      = false;
-    bool usingDataFileStore = false;
     bool usingBytecode      = false;
     byte bytecodeMode       = BYTECODE_MOBILE;
     bool forceFolder        = false;
