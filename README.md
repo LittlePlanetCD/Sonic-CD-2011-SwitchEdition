@@ -1,7 +1,5 @@
 ![](header.png?raw=true)
 
-[![Nintendo Switch](https://github.com/heyjoeway/Sonic-CD-11-Decompilation/actions/workflows/switch.yml/badge.svg)](https://github.com/heyjoeway/Sonic-CD-11-Decompilation/actions/workflows/switch.yml)
-
 A full decompilation of Sonic CD 2011, based on the PC remake with improvements & tweaks from the mobile remakes. Ported to the Switch.
 
 # **SUPPORT THE OFFICIAL RELEASE OF SONIC CD**
