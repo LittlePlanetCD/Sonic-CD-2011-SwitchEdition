@@ -59,8 +59,8 @@ bool ProcessEvents()
                 }
                 break;
             #if RETRO_PLATFORM != RETRO_SWITCH
-            case SDL_CONTROLLERDEVICEADDED: controllerInit(Engine.sdlEvents.cdevice.which); break;
-            case SDL_CONTROLLERDEVICEREMOVED: controllerClose(Engine.sdlEvents.cdevice.which); break;
+            case SDL_CONTROLLERDEVICEADDED: ControllerInit(Engine.sdlEvents.cdevice.which); break;
+            case SDL_CONTROLLERDEVICEREMOVED: ControllerClose(Engine.sdlEvents.cdevice.which); break;
             #endif
             case SDL_APP_WILLENTERBACKGROUND:
                 if (!(disableFocusPause & 1))
