@@ -263,7 +263,10 @@ int InitRenderDevice()
 
     SDL_GL_SetSwapInterval(Engine.vsync ? 1 : 0);
 
-#if RETRO_PLATFORM != RETRO_ANDROID && RETRO_PLATFORM != RETRO_OSX
+#if RETRO_PLATFORM == RETRO_SWITCH
+    // Should probably add error
+    gladLoadGL();
+#elif RETRO_PLATFORM != RETRO_ANDROID && RETRO_PLATFORM != RETRO_OSX
     // glew Setup
     GLenum err = glewInit();
     if (err != GLEW_OK) {
@@ -388,6 +391,7 @@ void FlipScreen()
 
 #if !RETRO_USE_ORIGINAL_CODE
     float dimAmount = 1.0;
+#if RETRO_PLATFORM != RETRO_SWITCH //switch doesn't need this it's builtin
     if ((!Engine.masterPaused || Engine.frameStep) && !drawStageGFXHQ) {
         if (Engine.dimTimer < Engine.dimLimit) {
             if (Engine.dimPercent < 1.0) {
@@ -399,11 +403,9 @@ void FlipScreen()
         else if (Engine.dimPercent > 0.25 && Engine.dimLimit >= 0) {
             Engine.dimPercent *= 0.9;
         }
-
+#endif //! RETRO_PLATFORM != RETRO_SWITCH
         dimAmount = Engine.dimMax * Engine.dimPercent;
-    }
 #endif
-
     if (renderType == RENDER_SW) {
 #if RETRO_USING_OPENGL
 
@@ -667,7 +669,7 @@ void FlipScreenFB()
 #if RETRO_USING_OPENGL
     glLoadIdentity();
     glRotatef(-90.0, 0.0, 0.0, 1.0);
-    glOrtho(0, SCREEN_XSIZE << 4, 0.0, SCREEN_YSIZE << 4, -1.0, 1.0);
+    glOrthox(0, SCREEN_XSIZE << 4, 0.0, SCREEN_YSIZE << 4, -1.0, 1.0);
     glViewport(0, 0, SCREEN_YSIZE, SCREEN_XSIZE);
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebufferHW);
@@ -740,7 +742,7 @@ void FlipScreenNoFB()
     glClear(GL_COLOR_BUFFER_BIT);
 
     glLoadIdentity();
-    glOrtho(0, SCREEN_XSIZE << 4, SCREEN_YSIZE << 4, 0.0, -1.0, 1.0);
+    glOrthox(0, SCREEN_XSIZE << 4, SCREEN_YSIZE << 4, 0.0, -1.0, 1.0);
     glViewport(viewOffsetX, 0, viewWidth, viewHeight);
 
     glBindTexture(GL_TEXTURE_2D, gfxTextureID[texPaletteNum]);
@@ -828,7 +830,7 @@ void FlipScreenHRes()
 
     glLoadIdentity();
 
-    glOrtho(0, SCREEN_XSIZE << 4, SCREEN_YSIZE << 4, 0.0, -1.0, 1.0);
+    glOrthox(0, SCREEN_XSIZE << 4, SCREEN_YSIZE << 4, 0.0, -1.0, 1.0);
     glViewport(viewOffsetX, 0, bufferWidth, bufferHeight);
     glBindTexture(GL_TEXTURE_2D, gfxTextureID[texPaletteNum]);
     glDisable(GL_BLEND);

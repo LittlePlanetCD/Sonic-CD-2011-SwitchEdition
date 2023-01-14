@@ -178,11 +178,12 @@ bool getControllerButton(byte buttonID)
     bool pressed = false;
 
     for (int i = 0; i < controllers.size(); ++i) {
+		if (pressed) break;
         SDL_GameController *controller = controllers[i];
 
         if (SDL_GameControllerGetButton(controller, (SDL_GameControllerButton)buttonID)) {
             pressed |= true;
-            continue;
+            break;
         }
         else {
             switch (buttonID) {

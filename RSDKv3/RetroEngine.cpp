@@ -30,6 +30,10 @@ inline int GetLowerRate(int intendRate, int targetRate)
     return result;
 }
 
+#if RETRO_PLATFORM == RETRO_SWITCH
+int devDownTimer = 0;
+#endif
+
 bool ProcessEvents()
 {
 #if RETRO_USING_SDL1 || RETRO_USING_SDL2
@@ -54,8 +58,10 @@ bool ProcessEvents()
                     case SDL_WINDOWEVENT_FOCUS_GAINED: Engine.hasFocus = true; break;
                 }
                 break;
-            case SDL_CONTROLLERDEVICEADDED: ControllerInit(Engine.sdlEvents.cdevice.which); break;
-            case SDL_CONTROLLERDEVICEREMOVED: ControllerClose(Engine.sdlEvents.cdevice.which); break;
+            #if RETRO_PLATFORM != RETRO_SWITCH
+            case SDL_CONTROLLERDEVICEADDED: controllerInit(Engine.sdlEvents.cdevice.which); break;
+            case SDL_CONTROLLERDEVICEREMOVED: controllerClose(Engine.sdlEvents.cdevice.which); break;
+            #endif
             case SDL_APP_WILLENTERBACKGROUND:
                 if (!(disableFocusPause & 1))
                     Engine.message = MESSAGE_LOSTFOCUS;
@@ -296,6 +302,9 @@ void RetroEngine::Init()
     if (LoadGameConfig("Data/Game/GameConfig.bin")) {
         if (InitRenderDevice()) {
             if (InitAudioPlayback()) {
+                #if RETRO_PLATFORM == RETRO_SWITCH
+                ControllerInit(0);
+                #endif
                 InitFirstStage();
                 ClearScriptData();
                 initialised = true;

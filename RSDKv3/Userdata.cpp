@@ -1,5 +1,12 @@
 #include "RetroEngine.hpp"
 
+// Your guess is as good as mine
+#if RETRO_PLATFORM == RETRO_SWITCH
+long pathconf (const char *__path, int __name) {
+    return 0;
+}
+#endif
+
 #if RETRO_PLATFORM == RETRO_WIN && _MSC_VER
 #include <Windows.h>
 #include <codecvt>
@@ -364,7 +371,7 @@ void InitUserdata()
         ini.SetBool("Window", "Borderless", Engine.borderless = false);
         ini.SetBool("Window", "VSync", Engine.vsync = false);
         ini.SetInteger("Window", "ScalingMode", Engine.scalingMode = 0);
-        ini.SetInteger("Window", "WindowScale", Engine.windowScale = 2);
+        ini.SetInteger("Window", "WindowScale", Engine.windowScale = 4);
         ini.SetInteger("Window", "ScreenWidth", SCREEN_XSIZE = DEFAULT_SCREEN_XSIZE);
         SCREEN_XSIZE_CONFIG = SCREEN_XSIZE;
         ini.SetInteger("Window", "RefreshRate", Engine.refreshRate = 60);

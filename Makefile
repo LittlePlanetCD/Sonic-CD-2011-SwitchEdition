@@ -1,66 +1,153 @@
+.DEFAULT_GOAL := all
+
+NAME		=  scd2011
+SUFFIX		= 
+PKGCONFIG	=  pkg-config
+DEBUG		?= 0
+STATIC		?= 1
+VERBOSE		?= 0
+PROFILE		?= 0
+STRIP		?= strip
+
+# -fsigned-char required to prevent hang in LoadStageCollisions
+CFLAGS		?= -fsigned-char -std=c++17
+
+# =============================================================================
+# Detect default platform if not explicitly specified
+# =============================================================================
+
+ifeq ($(OS),Windows_NT)
+	PLATFORM ?= Windows
+else
+	UNAME_S := $(shell uname -s)
+
+	ifeq ($(UNAME_S),Linux)
+		PLATFORM ?= Linux
+	endif
+
+	ifeq ($(UNAME_S),Darwin)
+		PLATFORM ?= macOS
+	endif
+
+endif
+
+ifdef EMSCRIPTEN
+	PLATFORM = Emscripten
+endif
+
+PLATFORM ?= Unknown
+
+# =============================================================================
+
+OUTDIR = bin/$(PLATFORM)
+OBJDIR = objects/$(PLATFORM)
+
+include Makefile_cfgs/Platforms/$(PLATFORM).cfg
+
+# =============================================================================
+
 ifeq ($(STATIC),1)
-  PKG_CONFIG_STATIC_FLAG = --static
-  CXXFLAGS_ALL += -static
+	PKGCONFIG +=  --static
 endif
 
-CXXFLAGS_ALL += -MMD -MP -MF objects/$*.d $(shell pkg-config --cflags $(PKG_CONFIG_STATIC_FLAG) vorbisfile vorbis theoradec sdl2 glew) $(CXXFLAGS) \
-   -DBASE_PATH='"$(BASE_PATH)"' \
-   -Idependencies/all/filesystem/include \
-   -Idependencies/all/theoraplay \
-   -Idependencies/all/tinyxml2/
-LDFLAGS_ALL += $(LDFLAGS)
-LIBS_ALL += $(shell pkg-config --libs $(PKG_CONFIG_STATIC_FLAG) vorbisfile vorbis theoradec sdl2 glew) -pthread $(LIBS)
-
-SOURCES = \
-  dependencies/all/tinyxml2/tinyxml2.cpp \
-  dependencies/all/theoraplay/theoraplay.c \
-  RSDKv3/Animation.cpp \
-  RSDKv3/Audio.cpp \
-  RSDKv3/Collision.cpp \
-  RSDKv3/Debug.cpp \
-  RSDKv3/Drawing.cpp \
-  RSDKv3/Ini.cpp \
-  RSDKv3/Input.cpp \
-  RSDKv3/main.cpp \
-  RSDKv3/ModAPI.cpp \
-  RSDKv3/Math.cpp \
-  RSDKv3/Object.cpp \
-  RSDKv3/Palette.cpp \
-  RSDKv3/Player.cpp \
-  RSDKv3/Reader.cpp \
-  RSDKv3/RetroEngine.cpp \
-  RSDKv3/Scene.cpp \
-  RSDKv3/Scene3D.cpp \
-  RSDKv3/Script.cpp \
-  RSDKv3/Sprite.cpp \
-  RSDKv3/String.cpp \
-  RSDKv3/Text.cpp \
-  RSDKv3/Userdata.cpp \
-  RSDKv3/Video.cpp
-
-	  
-ifeq ($(FORCE_CASE_INSENSITIVE),1)
-  CXXFLAGS_ALL += -DFORCE_CASE_INSENSITIVE
-  SOURCES += RSDKv3/fcaseopen.c
+ifeq ($(DEBUG),1)
+	CFLAGS += -g
+	STRIP = :
+else
+	CFLAGS += -O3
 endif
 
-OBJECTS = $(SOURCES:%=objects/%.o)
-DEPENDENCIES = $(SOURCES:%=objects/%.d)
+ifeq ($(PROFILE),1)
+	CFLAGS += -pg -g -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls -fno-default-inline
+endif
 
-all: bin/RSDKv3
+ifeq ($(VERBOSE),0)
+	CC := @$(CC)
+	CXX := @$(CXX)
+endif
 
-include $(wildcard $(DEPENDENCIES))
+# =============================================================================
 
-objects/%.o: %
-	mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS_ALL) -std=c++17 $< -o $@ -c
+CFLAGS += `$(PKGCONFIG) --cflags sdl2 ogg vorbis theora vorbisfile theoradec`
+LIBS   += `$(PKGCONFIG) --libs-only-l --libs-only-L sdl2 ogg vorbis theora vorbisfile theoradec`
 
-bin/RSDKv3: $(OBJECTS)
-	mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS_ALL) $(LDFLAGS_ALL) $^ -o $@ $(LIBS_ALL)
+#CFLAGS += -Wno-strict-aliasing -Wno-narrowing -Wno-write-strings
 
-install: bin/RSDKv3
-	install -Dp -m755 bin/RSDKv3 $(prefix)/bin/RSDKv3
+ifeq ($(STATIC),1)
+	CFLAGS += -static
+endif
+
+INCLUDES  += \
+	-I./RSDKv3 \
+	-I./dependencies/all/theoraplay \
+    -I./dependencies/all/tinyxml2
+
+INCLUDES += $(LIBS)
+
+# Main Sources
+SOURCES	+=	\
+	RSDKv3/Animation \
+	RSDKv3/Audio \
+	RSDKv3/Collision \
+	RSDKv3/Debug \
+	RSDKv3/Drawing \
+	RSDKv3/fcaseopen \
+	RSDKv3/Ini \
+	RSDKv3/Input \
+	RSDKv3/main \
+	RSDKv3/Math \
+	RSDKv3/ModAPI \
+	RSDKv3/Object \
+	RSDKv3/Palette \
+	RSDKv3/Player \
+	RSDKv3/Reader \
+	RSDKv3/RetroEngine \
+	RSDKv3/Scene \
+	RSDKv3/Scene3D \
+	RSDKv3/Script \
+	RSDKv3/Sprite \
+	RSDKv3/String \
+	RSDKv3/Text \
+	RSDKv3/Userdata \
+	RSDKv3/Video	\
+    dependencies/all/tinyxml2/tinyxml2
+
+# Theoraplay sources
+SOURCES +=	dependencies/all/theoraplay/theoraplay
+
+PKGSUFFIX ?= $(SUFFIX)
+
+BINPATH = $(OUTDIR)/$(NAME)$(SUFFIX)
+PKGPATH = $(OUTDIR)/$(NAME)$(PKGSUFFIX)
+
+OBJECTS += $(addprefix $(OBJDIR)/, $(addsuffix .o, $(SOURCES)))
+
+$(shell mkdir -p $(OUTDIR))
+$(shell mkdir -p $(OBJDIR))
+
+$(OBJDIR)/%.o: %.c
+	@mkdir -p $(@D)
+	@echo -n Compiling $<...
+	$(CC) -c $(CFLAGS) $(INCLUDES) $(DEFINES) $< -o $@
+	@echo " Done!"
+
+$(OBJDIR)/%.o: %.cpp
+	@mkdir -p $(@D)
+	@echo -n Compiling $<...
+	$(CXX) -c $(CFLAGS) $(INCLUDES) $(DEFINES) $< -o $@
+	@echo " Done!"
+
+$(BINPATH): $(OBJDIR) $(OBJECTS)
+	@echo -n Linking...
+	$(CXX) $(CFLAGS) $(LDFLAGS) $(OBJECTS) -o $@ $(LIBS)
+	@echo " Done!"
+	$(STRIP) $@
+
+ifeq ($(BINPATH),$(PKGPATH))
+all: $(BINPATH)
+else
+all: $(PKGPATH)
+endif
 
 clean:
-	 rm -r -f bin && rm -r -f objects
+	rm -rf $(OBJDIR)
