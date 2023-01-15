@@ -169,10 +169,16 @@ typedef unsigned int uint;
 #define GL_COLOR_ATTACHMENT0   GL_COLOR_ATTACHMENT0_EXT
 #define GL_FRAMEBUFFER_BINDING GL_FRAMEBUFFER_BINDING_EXT
 #elif RETRO_PLATFORM == RETRO_SWITCH
+#define GL_GLEXT_PROTOTYPES
+
 #include <GLES/gl.h>
+#include <GLES/glext.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <glad/glad.h>  // OpenGL loader
+
+#define glOrtho                glOrthof
+
 #else
 #include <GL/glew.h>
 #endif

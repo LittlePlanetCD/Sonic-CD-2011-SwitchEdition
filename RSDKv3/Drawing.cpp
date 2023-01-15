@@ -666,7 +666,7 @@ void FlipScreenFB()
 #if RETRO_USING_OPENGL
     glLoadIdentity();
     glRotatef(-90.0, 0.0, 0.0, 1.0);
-    glOrthox(0, SCREEN_XSIZE << 4, 0.0, SCREEN_YSIZE << 4, -1.0, 1.0);
+    glOrtho(0, SCREEN_XSIZE << 4, 0.0, SCREEN_YSIZE << 4, -1.0, 1.0);
     glViewport(0, 0, SCREEN_YSIZE, SCREEN_XSIZE);
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebufferHW);
@@ -739,7 +739,7 @@ void FlipScreenNoFB()
     glClear(GL_COLOR_BUFFER_BIT);
 
     glLoadIdentity();
-    glOrthox(0, SCREEN_XSIZE << 4, SCREEN_YSIZE << 4, 0.0, -1.0, 1.0);
+    glOrtho(0, SCREEN_XSIZE << 4, SCREEN_YSIZE << 4, 0.0, -1.0, 1.0);
     glViewport(viewOffsetX, 0, viewWidth, viewHeight);
 
     glBindTexture(GL_TEXTURE_2D, gfxTextureID[texPaletteNum]);
@@ -827,7 +827,7 @@ void FlipScreenHRes()
 
     glLoadIdentity();
 
-    glOrthox(0, SCREEN_XSIZE << 4, SCREEN_YSIZE << 4, 0.0, -1.0, 1.0);
+    glOrtho(0, SCREEN_XSIZE << 4, SCREEN_YSIZE << 4, 0.0, -1.0, 1.0);
     glViewport(viewOffsetX, 0, bufferWidth, bufferHeight);
     glBindTexture(GL_TEXTURE_2D, gfxTextureID[texPaletteNum]);
     glDisable(GL_BLEND);
