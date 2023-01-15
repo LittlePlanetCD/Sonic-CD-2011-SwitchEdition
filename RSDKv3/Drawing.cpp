@@ -179,12 +179,14 @@ int InitRenderDevice()
         return 0;
     }
 
-    Engine.screenBuffer2x =
+  //  if(drawStageGFXHQ) {
+        Engine.screenBuffer2x =
         SDL_CreateTexture(Engine.renderer, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, SCREEN_XSIZE * 2, SCREEN_YSIZE * 2);
 
-    if (!Engine.screenBuffer2x) {
-        PrintLog("ERROR: failed to create screen buffer HQ!\nerror msg: %s", SDL_GetError());
-        return 0;
+        if (!Engine.screenBuffer2x) {
+            PrintLog("ERROR: failed to create screen buffer HQ!\nerror msg: %s", SDL_GetError());
+            return 0;
+    //    }
     }
 #endif
 
@@ -375,10 +377,12 @@ int InitRenderDevice()
         memset(Engine.frameBuffer, 0, (GFX_LINESIZE * SCREEN_YSIZE) * sizeof(ushort));
         memset(Engine.frameBuffer2x, 0, GFX_LINESIZE_DOUBLE * (SCREEN_YSIZE * 2) * sizeof(ushort));
 
+#if RETRO_USING_OPENGL
         Engine.texBuffer   = new uint[SCREEN_XSIZE * SCREEN_YSIZE];
         Engine.texBuffer2x = new uint[(SCREEN_XSIZE * 2) * (SCREEN_YSIZE * 2)];
         memset(Engine.texBuffer, 0, (SCREEN_XSIZE * SCREEN_YSIZE) * sizeof(uint));
         memset(Engine.texBuffer2x, 0, (SCREEN_XSIZE * 2) * (SCREEN_YSIZE * 2) * sizeof(uint));
+#endif
     }
 
     OBJECT_BORDER_X2 = SCREEN_XSIZE + 0x80;
@@ -518,16 +522,7 @@ void FlipScreen()
         ushort *pixels = NULL;
         if (Engine.gameMode != ENGINE_VIDEOWAIT) {
             if (!drawStageGFXHQ) {
-                SDL_LockTexture(Engine.screenBuffer, NULL, (void **)&pixels, &pitch);
-                ushort *frameBufferPtr = Engine.frameBuffer;
-                for (int y = 0; y < SCREEN_YSIZE; ++y) {
-                    memcpy(pixels, frameBufferPtr, SCREEN_XSIZE * sizeof(ushort));
-                    frameBufferPtr += GFX_LINESIZE;
-                    pixels += pitch / sizeof(ushort);
-                }
-                // memcpy(pixels, Engine.frameBuffer, pitch * SCREEN_YSIZE); //faster but produces issues with odd numbered screen sizes
-                SDL_UnlockTexture(Engine.screenBuffer);
-
+                SDL_UpdateTexture(Engine.screenBuffer, NULL, (void *)Engine.frameBuffer, GFX_LINESIZE * sizeof(ushort));
                 SDL_RenderCopy(Engine.renderer, Engine.screenBuffer, NULL, destScreenPos);
             }
             else {
@@ -1028,10 +1023,12 @@ void ReleaseRenderDevice()
     if (Engine.frameBuffer2x)
         delete[] Engine.frameBuffer2x;
 
+#if RETRO_USING_OPENGL
     if (Engine.texBuffer)
         delete[] Engine.texBuffer;
     if (Engine.texBuffer2x)
         delete[] Engine.texBuffer2x;
+#endif
 
     if (renderType == RENDER_SW) {
 #if RETRO_USING_SDL2 && !RETRO_USING_OPENGL
@@ -1950,8 +1947,10 @@ void DrawStageGFX()
 
     DrawObjectList(5);
     DrawObjectList(6);
+#if RETRO_USE_ORIGINS_LAYERS
 	// Extra Origins draw list
     DrawObjectList(7);
+#endif
 
 #if !RETRO_USE_ORIGINAL_CODE
     if (drawStageGFXHQ)
