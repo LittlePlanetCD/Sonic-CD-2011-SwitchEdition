@@ -2,6 +2,9 @@
 
 A full decompilation of Sonic CD 2011, based on the PC remake with improvements & tweaks from the mobile remakes. Ported to the Switch.
 
+# **WARNING**
+While this port can actually use OpenGL on compile for Switch, using HardwareRenderer set to true **WILL** cause the display to break. This port is a work in progress, and if anyone manages to fix it, please send over a pull request.
+
 # **SUPPORT THE OFFICIAL RELEASE OF SONIC CD**
 + Without assets from the official release, this decompilation will not run.
 
