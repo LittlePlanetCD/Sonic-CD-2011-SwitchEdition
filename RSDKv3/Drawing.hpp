@@ -6,7 +6,11 @@
 #define GFXDATA_SIZE  (0x800 * 0x800)
 
 // usually 7, but origins has an extra one for some reason
+#if RETRO_USE_ORIGINS_LAYERS
 #define DRAWLAYER_COUNT (8)
+#else
+#define DRAWLAYER_COUNT (7)
+#endif
 
 enum FlipFlags { FLIP_NONE, FLIP_X, FLIP_Y, FLIP_XY };
 enum InkFlags { INK_NONE, INK_BLEND, INK_ALPHA, INK_ADD, INK_SUB };
