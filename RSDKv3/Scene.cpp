@@ -302,11 +302,11 @@ void ProcessStage(void)
             DrawObjectList(3);
             DrawObjectList(4);
             DrawObjectList(5);
-            DrawObjectList(6);
 #if RETRO_USE_ORIGINS_LAYERS
 			// Extra Origins draw list
             DrawObjectList(7);
 #endif
+            DrawObjectList(6);
 
 #if !RETRO_USE_ORIGINAL_CODE
             DrawDebugOverlays();
