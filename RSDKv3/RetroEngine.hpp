@@ -4,8 +4,6 @@
 // Disables POSIX use c++ name blah blah stuff
 #pragma warning(disable : 4996)
 
-// Setting this to true will allow an exe to be compiled with the Origins layer count, so people can compile a new exe for the new scripts.
-#define RETRO_USE_ORIGINS_LAYERS (1) 
 
 // Setting this to true removes (almost) ALL changes from the original code, the trade off is that a playable game cannot be built, it is advised to
 // be set to true only for preservation purposes

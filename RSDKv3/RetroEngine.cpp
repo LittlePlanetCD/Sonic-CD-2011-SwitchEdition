@@ -63,7 +63,7 @@ bool ProcessEvents()
             case SDL_CONTROLLERDEVICEREMOVED: ControllerClose(Engine.sdlEvents.cdevice.which); break;
             #endif
             case SDL_APP_WILLENTERBACKGROUND:
-                if (!(disableFocusPause & 1))
+                if (!((disableFocusPause + 1) & 1))
                     Engine.message = MESSAGE_LOSTFOCUS;
                 Engine.hasFocus = false;
                 break;
@@ -379,7 +379,7 @@ void RetroEngine::Run()
         running = ProcessEvents();
 
         // Focus Checks
-        if (!(disableFocusPause & 2)) {
+        if (!((disableFocusPause + 1) & 2)) {
             if (!Engine.hasFocus) {
                 if (!(Engine.focusState & 1))
                     Engine.focusState = PauseSound() ? 3 : 1;
@@ -529,7 +529,7 @@ void RetroEngine::LoadXMLVariables()
             continue;
 
         SetActiveMod(m);
-        if (LoadFile("Data/Game/game.xml", &info)) {
+        if (LoadFile("Data/Game/Game.xml", &info)) {
             tinyxml2::XMLDocument *doc = new tinyxml2::XMLDocument;
 
             char *xmlData = new char[info.fileSize + 1];
@@ -580,7 +580,7 @@ void RetroEngine::LoadXMLPalettes()
             continue;
 
         SetActiveMod(m);
-        if (LoadFile("Data/Game/game.xml", &info)) {
+        if (LoadFile("Data/Game/Game.xml", &info)) {
             tinyxml2::XMLDocument *doc = new tinyxml2::XMLDocument;
 
             char *xmlData = new char[info.fileSize + 1];
@@ -646,7 +646,7 @@ void RetroEngine::LoadXMLObjects()
             continue;
 
         SetActiveMod(m);
-        if (LoadFile("Data/Game/game.xml", &info)) {
+        if (LoadFile("Data/Game/Game.xml", &info)) {
             tinyxml2::XMLDocument *doc = new tinyxml2::XMLDocument;
 
             char *xmlData = new char[info.fileSize + 1];
@@ -713,7 +713,7 @@ void RetroEngine::LoadXMLSoundFX()
             continue;
 
         SetActiveMod(m);
-        if (LoadFile("Data/Game/game.xml", &info)) {
+        if (LoadFile("Data/Game/Game.xml", &info)) {
             tinyxml2::XMLDocument *doc = new tinyxml2::XMLDocument;
 
             char *xmlData = new char[info.fileSize + 1];
@@ -767,7 +767,7 @@ void RetroEngine::LoadXMLPlayers(TextMenu *menu)
             continue;
 
         SetActiveMod(m);
-        if (LoadFile("Data/Game/game.xml", &info)) {
+        if (LoadFile("Data/Game/Game.xml", &info)) {
             tinyxml2::XMLDocument *doc = new tinyxml2::XMLDocument;
 
             char *xmlData = new char[info.fileSize + 1];
@@ -817,7 +817,7 @@ void RetroEngine::LoadXMLStages(TextMenu *menu, int listNo)
             continue;
 
         SetActiveMod(m);
-        if (LoadFile("Data/Game/game.xml", &info)) {
+        if (LoadFile("Data/Game/Game.xml", &info)) {
             tinyxml2::XMLDocument *doc = new tinyxml2::XMLDocument;
 
             char *xmlData = new char[info.fileSize + 1];
@@ -962,6 +962,9 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
         if (devMenu) {
             SetGlobalVariableByName("Options.DevMenuFlag", true);
         }
+#if RETRO_USE_MOD_LOADER
+        SetGlobalVariableByName("Engine.Standalone", true);
+#endif
 
         SetGlobalVariableByName("Engine.PlatformId", RETRO_GAMEPLATFORMID);
         SetGlobalVariableByName("Engine.DeviceType", RETRO_GAMEPLATFORM);
@@ -1101,7 +1104,6 @@ void RetroEngine::Callback(int callbackID)
             stageMode = STAGEMODE_LOAD;
             break;
         case CALLBACK_EXIT_SELECTED:
-            // gameMode = ENGINE_EXITGAME;
             PrintLog("Callback: Exit Selected");
             if (bytecodeMode == BYTECODE_PC) {
                 running = false;
