@@ -1109,7 +1109,9 @@ void RetroEngine::Callback(int callbackID)
                 running = false;
             }
             else {
-               gameMode = ENGINE_EXITGAME;
+                activeStageList   = 0;
+                stageListPosition = 0;
+                stageMode         = STAGEMODE_LOAD;
             }
             break;
         case CALLBACK_BUY_FULL_GAME_SELECTED: //, Mobile = Buy Full Game Selected (Trial Mode Only)
