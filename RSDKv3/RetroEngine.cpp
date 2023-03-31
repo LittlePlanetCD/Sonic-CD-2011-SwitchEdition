@@ -51,7 +51,7 @@ bool ProcessEvents()
                     }
                     case SDL_WINDOWEVENT_CLOSE: Engine.gameMode = ENGINE_EXITGAME; return false;
                     case SDL_WINDOWEVENT_FOCUS_LOST:
-                        if (!(disableFocusPause & 1))
+                        if (!((disableFocusPause + 1) & 1))
                             Engine.message = MESSAGE_LOSTFOCUS;
                         Engine.hasFocus = false;
                         break;
