@@ -964,10 +964,10 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
         }
 #if RETRO_USE_MOD_LOADER
         SetGlobalVariableByName("Engine.Standalone", true);
+        SetGlobalVariableByName("Engine.DeviceType", RETRO_GAMEPLATFORM);
 #endif
 
-        SetGlobalVariableByName("Engine.PlatformId", RETRO_GAMEPLATFORMID);
-        SetGlobalVariableByName("Engine.DeviceType", RETRO_GAMEPLATFORM);
+        SetGlobalVariableByName("Engine.PlatformID", RETRO_GAMEPLATFORMID);
 
         // Read SFX
         byte sfxCount = 0;
@@ -1026,7 +1026,10 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
         if (!disableSaveIniOverride) {
 #endif
             if (controlMode >= 0) {
-                saveRAM[35] = controlMode;
+                if (ReadSaveRAMData()) {
+                    saveRAM[35] = controlMode;
+                    WriteSaveRAMData();
+                }
                 SetGlobalVariableByName("Options.OriginalControls", controlMode);
             }
 #if RETRO_USE_MOD_LOADER
@@ -1064,9 +1067,8 @@ void RetroEngine::Callback(int callbackID)
 {
     // Sonic Origins Params
     int notifyParam1 = GetGlobalVariableByName("game.callbackParam0");
-    // int notifyParam2 = GetGlobalVariableByName("game.callbackParam1");
-    // int notifyParam3 = GetGlobalVariableByName("game.callbackParam2");
-    // int notifyParam4 = GetGlobalVariableByName("game.callbackParam3");
+    int notifyParam2 = GetGlobalVariableByName("game.callbackParam1");
+    int notifyParam3 = GetGlobalVariableByName("game.callbackParam2");
 
     switch (callbackID) {
         default: PrintLog("Callback: Unknown (%d)", callbackID); break;
@@ -1188,7 +1190,7 @@ void RetroEngine::Callback(int callbackID)
             PrintLog("Callback: Pause Menu Requested");
             break;
         case CALLBACK_FULL_VERSION_ONLY: PrintLog("Callback: Full Version Only Notify"); break; // PC = ???, Mobile = Full Game Only Screen
-        case CALLBACK_STAFF_CREDITS:                                                            // PC = Staff Credits, Mobile = Privacy
+        case CALLBACK_STAFF_CREDITS: // PC = Staff Credits, Mobile = Privacy
             if (bytecodeMode == BYTECODE_PC) {
                 for (int s = 0; s < stageListCount[STAGELIST_PRESENTATION]; ++s) {
                     if (StrComp("CREDITS", stageList[STAGELIST_PRESENTATION][s].name)) {
@@ -1223,7 +1225,10 @@ void RetroEngine::Callback(int callbackID)
         case NOTIFY_DEATH_EVENT: PrintLog("NOTIFY: DeathEvent() -> %d", notifyParam1); break;
         case NOTIFY_TOUCH_SIGNPOST: PrintLog("NOTIFY: TouchSignPost() -> %d", notifyParam1); break;
         case NOTIFY_HUD_ENABLE: PrintLog("NOTIFY: HUDEnable() -> %d", notifyParam1); break;
-        case NOTIFY_ADD_COIN: PrintLog("NOTIFY: AddCoin() -> %d", notifyParam1); break;
+        case NOTIFY_ADD_COIN:
+            PrintLog("NOTIFY: AddCoin() -> %d", notifyParam1);
+            SetGlobalVariableByName("game.coinCount", GetGlobalVariableByName("game.coinCount") + notifyParam1);
+            break;
         case NOTIFY_KILL_ENEMY: PrintLog("NOTIFY: KillEnemy() -> %d", notifyParam1); break;
         case NOTIFY_SAVESLOT_SELECT: PrintLog("NOTIFY: SaveSlotSelect() -> %d", notifyParam1); break;
         case NOTIFY_FUTURE_PAST:
@@ -1233,26 +1238,32 @@ void RetroEngine::Callback(int callbackID)
         case NOTIFY_GOTO_FUTURE_PAST: PrintLog("NOTIFY: GotoFuturePast() -> %d", notifyParam1); break;
         case NOTIFY_BOSS_END: PrintLog("NOTIFY: BossEnd() -> %d", notifyParam1); break;
         case NOTIFY_SPECIAL_END: PrintLog("NOTIFY: SpecialEnd() -> %d", notifyParam1); break;
-        case NOTIFY_DEBUGPRINT: PrintLog("NOTIFY: DebugPrint() -> %d", notifyParam1); break;
+        case NOTIFY_DEBUGPRINT: PrintLog("NOTIFY: DebugPrint() -> %d, %d, %d", notifyParam1, notifyParam2, notifyParam3); break;
         case NOTIFY_KILL_BOSS: PrintLog("NOTIFY: KillBoss() -> %d", notifyParam1); break;
         case NOTIFY_TOUCH_EMERALD: PrintLog("NOTIFY: TouchEmerald() -> %d", notifyParam1); break;
-        case NOTIFY_STATS_ENEMY: PrintLog("NOTIFY: StatsEnemy() -> %d", notifyParam1); break;
-        case NOTIFY_STATS_CHARA_ACTION: PrintLog("NOTIFY: StatsCharaAction() -> %d", notifyParam1); break;
+        case NOTIFY_STATS_ENEMY: PrintLog("NOTIFY: StatsEnemy() -> %d, %d, %d", notifyParam1, notifyParam2, notifyParam3); break;
+        case NOTIFY_STATS_CHARA_ACTION: PrintLog("NOTIFY: StatsCharaAction() -> %d, %d, %d", notifyParam1, notifyParam2, notifyParam3); break;
         case NOTIFY_STATS_RING: PrintLog("NOTIFY: StatsRing() -> %d", notifyParam1); break;
         case NOTIFY_STATS_MOVIE: PrintLog("NOTIFY: StatsMovie() -> %d", notifyParam1); break;
-        case NOTIFY_STATS_PARAM_1: PrintLog("NOTIFY: StatsParam1() -> %d", notifyParam1); break;
+        case NOTIFY_STATS_PARAM_1: PrintLog("NOTIFY: StatsParam1() -> %d, %d, %d", notifyParam1, notifyParam2, notifyParam3); break;
         case NOTIFY_STATS_PARAM_2: PrintLog("NOTIFY: StatsParam2() -> %d", notifyParam1); break;
         case NOTIFY_CHARACTER_SELECT:
             PrintLog("NOTIFY: CharacterSelect() -> %d", notifyParam1);
             SetGlobalVariableByName("game.callbackResult", 1);
             SetGlobalVariableByName("game.continueFlag", 0);
             break;
-        case NOTIFY_SPECIAL_RETRY: SetGlobalVariableByName("game.callbackResult", 1); break;
+        case NOTIFY_SPECIAL_RETRY:
+            PrintLog("NOTIFY: SpecialRetry() -> %d, %d, %d", notifyParam1, notifyParam2, notifyParam3);
+            SetGlobalVariableByName("game.callbackResult", 1);
+            break;
         case NOTIFY_TOUCH_CHECKPOINT: PrintLog("NOTIFY: TouchCheckpoint() -> %d", notifyParam1); break;
         case NOTIFY_ACT_FINISH: PrintLog("NOTIFY: ActFinish() -> %d", notifyParam1); break;
         case NOTIFY_1P_VS_SELECT: PrintLog("NOTIFY: 1PVSSelect() -> %d", notifyParam1); break;
-        case NOTIFY_CONTROLLER_SUPPORT: PrintLog("NOTIFY: ControllerSupport() -> %d", notifyParam1); break;
-        case NOTIFY_STAGE_RETRY: PrintLog("NOTIFY: StageRetry() -> %d", notifyParam1); break;
+        case NOTIFY_CONTROLLER_SUPPORT:
+            PrintLog("NOTIFY: ControllerSupport() -> %d", notifyParam1);
+            SetGlobalVariableByName("game.callbackResult", 1);
+            break;
+        case NOTIFY_STAGE_RETRY: PrintLog("NOTIFY: StageRetry() -> %d, %d, %d", notifyParam1, notifyParam2, notifyParam3); break;
         case NOTIFY_SOUND_TRACK: PrintLog("NOTIFY: SoundTrack() -> %d", notifyParam1); break;
         case NOTIFY_GOOD_ENDING: PrintLog("NOTIFY: GoodEnding() -> %d", notifyParam1); break;
         case NOTIFY_BACK_TO_MAINMENU: PrintLog("NOTIFY: BackToMainMenu() -> %d", notifyParam1); break;
