@@ -30,10 +30,6 @@ inline int GetLowerRate(int intendRate, int targetRate)
     return result;
 }
 
-#if RETRO_PLATFORM == RETRO_SWITCH
-int devDownTimer = 0;
-#endif
-
 bool ProcessEvents()
 {
 #if RETRO_USING_SDL1 || RETRO_USING_SDL2
