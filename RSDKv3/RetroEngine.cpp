@@ -587,39 +587,76 @@ void RetroEngine::LoadXMLPalettes()
 
             if (success) {
                 const tinyxml2::XMLElement *gameElement    = FirstXMLChildElement(doc, nullptr, "game");
-                const tinyxml2::XMLElement *paletteElement = FirstXMLChildElement(doc, gameElement, "palette");
+                const tinyxml2::XMLElement *paletteElement = gameElement->FirstChildElement("palette");
                 if (paletteElement) {
-                    const tinyxml2::XMLElement *clrElement = FirstXMLChildElement(doc, paletteElement, "color");
-                    if (clrElement) {
-                        do {
-                            const tinyxml2::XMLAttribute *bankAttr = FindXMLAttribute(clrElement, "bank");
-                            int clrBank                            = 0;
-                            if (bankAttr)
-                                clrBank = GetXMLAttributeValueInt(bankAttr);
+                    for (const tinyxml2::XMLElement *clrElement = paletteElement->FirstChildElement("color"); clrElement;
+                         clrElement                             = clrElement->NextSiblingElement("color")) {
+                        const tinyxml2::XMLAttribute *bankAttr = clrElement->FindAttribute("bank");
+                        int clrBank                            = 0;
+                        if (bankAttr)
+                            clrBank = bankAttr->IntValue();
 
-                            const tinyxml2::XMLAttribute *indAttr = FindXMLAttribute(clrElement, "index");
-                            int clrInd                            = 0;
-                            if (indAttr)
-                                clrInd = GetXMLAttributeValueInt(indAttr);
+                        const tinyxml2::XMLAttribute *indAttr = clrElement->FindAttribute("index");
+                        int clrInd                            = 0;
+                        if (indAttr)
+                            clrInd = indAttr->IntValue();
 
-                            const tinyxml2::XMLAttribute *rAttr = FindXMLAttribute(clrElement, "r");
-                            int clrR                            = 0;
-                            if (rAttr)
-                                clrR = GetXMLAttributeValueInt(rAttr);
+                        const tinyxml2::XMLAttribute *rAttr = clrElement->FindAttribute("r");
+                        int clrR                            = 0;
+                        if (rAttr)
+                            clrR = rAttr->IntValue();
 
-                            const tinyxml2::XMLAttribute *gAttr = FindXMLAttribute(clrElement, "g");
-                            int clrG                            = 0;
-                            if (gAttr)
-                                clrG = GetXMLAttributeValueInt(gAttr);
+                        const tinyxml2::XMLAttribute *gAttr = clrElement->FindAttribute("g");
+                        int clrG                            = 0;
+                        if (gAttr)
+                            clrG = gAttr->IntValue();
 
-                            const tinyxml2::XMLAttribute *bAttr = FindXMLAttribute(clrElement, "b");
-                            int clrB                            = 0;
-                            if (bAttr)
-                                clrB = GetXMLAttributeValueInt(bAttr);
+                        const tinyxml2::XMLAttribute *bAttr = clrElement->FindAttribute("b");
+                        int clrB                            = 0;
+                        if (bAttr)
+                            clrB = bAttr->IntValue();
 
-                            SetPaletteEntry(clrBank, clrInd, clrR, clrG, clrB);
+                        SetPaletteEntry(clrBank, clrInd, clrR, clrG, clrB);
+                    }
 
-                        } while ((clrElement = NextXMLSiblingElement(doc, clrElement, "color")));
+                    for (const tinyxml2::XMLElement *clrsElement = paletteElement->FirstChildElement("colors"); clrsElement;
+                         clrsElement                             = clrsElement->NextSiblingElement("colors")) {
+                        const tinyxml2::XMLAttribute *bankAttr = clrsElement->FindAttribute("bank");
+                        int bank                               = 0;
+                        if (bankAttr)
+                            bank = bankAttr->IntValue();
+
+                        const tinyxml2::XMLAttribute *indAttr = clrsElement->FindAttribute("start");
+                        int index                             = 0;
+                        if (indAttr)
+                            index = indAttr->IntValue();
+
+                        std::string text = clrsElement->GetText();
+                        // working: AABBFF #FFaaFF (12, 32, 34) (145 53 234)
+                        std::regex search(R"((?:#?([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2}))|(?:\((\d+),?\s*(\d+),?\s*(\d+)\)))",
+                                          std::regex_constants::icase | std::regex_constants::ECMAScript);
+                        std::smatch match;
+                        while (std::regex_search(text, match, search)) {
+                            int r, g, b;
+                            int base, start;
+                            if (match[1].matched) {
+                                // we have hex
+                                base  = 16;
+                                start = 1;
+                            }
+                            else {
+                                // triplet
+                                base  = 10;
+                                start = 4;
+                            }
+
+                            r = std::stoi(match[start + 0].str(), nullptr, base);
+                            g = std::stoi(match[start + 1].str(), nullptr, base);
+                            b = std::stoi(match[start + 2].str(), nullptr, base);
+
+                            SetPaletteEntry(bank, index++, r, g, b);
+                            text = match.suffix();
+                        }
                     }
                 }
             }
@@ -964,6 +1001,9 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
 #endif
 
         SetGlobalVariableByName("Engine.PlatformID", RETRO_GAMEPLATFORMID);
+#if !RETRO_USE_ORIGINAL_CODE
+		SetGlobalVariableByName("Config.IsPremiumUser", 1);			// this gets around the game over ui lol
+#endif
 
         // Read SFX
         byte sfxCount = 0;
@@ -1268,14 +1308,15 @@ void RetroEngine::Callback(int callbackID)
         case NOTIFY_EXTRAS_MODE: PrintLog("NOTIFY: ExtrasMode() -> %d", notifyParam1); break;
         case NOTIFY_SPIN_DASH_TYPE: PrintLog("NOTIFY: SpindashType() -> %d", notifyParam1); break;
         case NOTIFY_TIME_OVER: PrintLog("NOTIFY: TimeOver() -> %d", notifyParam1); break;
+        case NOTIFY_TIMEATTACK_MODE: PrintLog("NOTIFY: TimeAttackMode() -> %d", notifyParam1); break;
+        case NOTIFY_STATS_BREAK_OBJECT: PrintLog("NOTIFY: StatsBreakObject() -> %d, %d", notifyParam1, notifyParam2); break;
+        case NOTIFY_STATS_SAVE_FUTURE: PrintLog("NOTIFY: StatsSaveFuture() -> %d", notifyParam1); break;
+        case NOTIFY_STATS_CHARA_ACTION2: PrintLog("NOTIFY: StatsCharaAction2() -> %d, %d, %d", notifyParam1, notifyParam2, notifyParam3); break;
 
         // Sega Forever stuff
         case CALLBACK_SHOWMENU_2: PrintLog("Callback: showMenu(2)"); break;
         case CALLBACK_SHOWHELPCENTER: PrintLog("Callback: Show Help Center"); break;
         case CALLBACK_CHANGEADSTYPE: PrintLog("Callback: Change Ads Type"); break;
-        case CALLBACK_NONE_1000:
-        case CALLBACK_NONE_1001:
-        case CALLBACK_NONE_1006: PrintLog("Callback: Unknown - %d", callbackID); break;
         case CALLBACK_ONSHOWINTERSTITIAL: PrintLog("Callback: onShowInterstitial(2, 0) - Pause_Duration"); break;
         case CALLBACK_ONSHOWBANNER: PrintLog("Callback: onShowBanner()"); break;
         case CALLBACK_ONSHOWBANNER_PAUSESTART: PrintLog("Callback: onShowBanner() - Pause_Start"); break;
@@ -1283,7 +1324,8 @@ void RetroEngine::Callback(int callbackID)
         case CALLBACK_REMOVEADSBUTTON_FADEOUT: PrintLog("Callback: RemoveAdsButton_FadeOut()"); break;
         case CALLBACK_REMOVEADSBUTTON_FADEIN: PrintLog("Callback: RemoveAdsButton_FadeIn()"); break;
         case CALLBACK_ONSHOWINTERSTITIAL_2:
-        case CALLBACK_ONSHOWINTERSTITIAL_3: PrintLog("Callback: onShowInterstitial(0, 0)"); break;
+        case CALLBACK_ONSHOWINTERSTITIAL_3:
+        case CALLBACK_ONSHOWINTERSTITIAL_5: PrintLog("Callback: onShowInterstitial(0, 0)"); break;
         case CALLBACK_ONSHOWINTERSTITIAL_4: PrintLog("Callback: onShowInterstitial(1, 0)"); break;
         case CALLBACK_ONVISIBLEGRIDBTN_1: PrintLog("Callback: onVisibleGridBtn(1)"); break;
         case CALLBACK_ONVISIBLEGRIDBTN_0:
@@ -1296,9 +1338,14 @@ void RetroEngine::Callback(int callbackID)
         case CALLBACK_ONSHOWINTERSTITIAL_PAUSEDURATION: PrintLog("Callback: onShowInterstitial(0, 0) - Pause_Duration"); break;
         case CALLBACK_SHOWCOUNTDOWNMENU: PrintLog("Callback: showCountDownMenu(0)"); break;
         case CALLBACK_ONVISIBLEMAINMENU_1: PrintLog("Callback: onVisibleMainMenu(1)"); break;
-        case CALLBACK_ONVISIBLEMAINMENU_0:
-            PrintLog("Callback: OnVisibleMainMenu(0)");
+        case CALLBACK_ONVISIBLEMAINMENU_0: PrintLog("Callback: OnVisibleMainMenu(0)"); break;
+        case CALLBACK_ONSHOWREWARDADS:
+            PrintLog("Callback: onShowRewardAds(0)");
+
+            // small hack to prevent a softlock
+            SetGlobalVariableByName("RewardAdCallback", 1);
             break;
+        case CALLBACK_ONSHOWBANNER_2: PrintLog("Callback: onShowBanner(4, 0)"); break;
 
             // Mod loader Only
 #if RETRO_USE_MOD_LOADER
