@@ -361,6 +361,10 @@ int InitRenderDevice()
         vh = mode.w;
     }
     SetScreenDimensions(SCREEN_XSIZE, SCREEN_YSIZE, vw, vh);
+#elif RETRO_USING_SDL2 && RETRO_USING_OPENGL
+    int drawableWidth, drawableHeight;
+    SDL_GL_GetDrawableSize(Engine.window, &drawableWidth, &drawableHeight);
+    SetScreenDimensions(SCREEN_XSIZE, SCREEN_YSIZE, drawableWidth, drawableHeight);
 #elif RETRO_USING_SDL2
     SetScreenDimensions(SCREEN_XSIZE, SCREEN_YSIZE, SCREEN_XSIZE * Engine.windowScale, SCREEN_YSIZE * Engine.windowScale);
 #endif
@@ -1034,12 +1038,12 @@ void ReleaseRenderDevice()
     }
 
 #if RETRO_USING_OPENGL
-    for (int i = 0; i < HW_TEXTURE_COUNT; i++) glDeleteTextures(1, &gfxTextureID[i]);
-
+	if (Engine.glContext) {
+		for (int i = 0; i < HW_TEXTURE_COUNT; i++) glDeleteTextures(1, &gfxTextureID[i]);
 #if RETRO_USING_SDL2
-    if (Engine.glContext)
-        SDL_GL_DeleteContext(Engine.glContext);
+		SDL_GL_DeleteContext(Engine.glContext);
 #endif
+	}
 #endif
 
 #if RETRO_USING_SDL2

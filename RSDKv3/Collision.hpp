@@ -1,11 +1,14 @@
 #ifndef COLLISION_H
 #define COLLISION_H
 
+#define COLSTORE_COUNT (2)
+
 enum CollisionSides {
-    CSIDE_FLOOR = 0,
-    CSIDE_LWALL = 1,
-    CSIDE_RWALL = 2,
-    CSIDE_ROOF  = 3,
+    CSIDE_FLOOR  = 0,
+    CSIDE_LWALL  = 1,
+    CSIDE_RWALL  = 2,
+    CSIDE_ROOF   = 3,
+    CSIDE_ENTITY = 4,
 };
 
 enum CollisionModes {
@@ -27,6 +30,7 @@ enum ObjectCollisionTypes {
     C_BOX      = 1,
     C_BOX2     = 2,
     C_PLATFORM = 3,
+    C_BOX3     = 4, // Introduced in Origins Plus
     C_ENEMY    = 5, // Introduced in Origins Plus
 };
 
@@ -36,6 +40,16 @@ struct CollisionSensor {
     int angle;
     bool collided;
 };
+
+struct CollisionStore {
+    int entityNo;
+    byte type;
+    int left;
+    int right;
+    int top;
+    int bottom;
+};
+extern CollisionStore collisionStorage[2];
 
 #if !RETRO_USE_ORIGINAL_CODE
 #define DEBUG_HITBOX_COUNT (0x400)
@@ -52,7 +66,8 @@ struct DebugHitboxInfo {
     Entity *entity;
 };
 
-enum DebugHitboxTypes { H_TYPE_TOUCH, H_TYPE_BOX, H_TYPE_PLAT, H_TYPE_FINGER };
+
+enum DebugHitboxTypes { H_TYPE_TOUCH, H_TYPE_BOX, H_TYPE_PLAT, H_TYPE_FINGER};
 
 extern byte showHitboxes;
 extern int debugHitboxCount;
@@ -87,6 +102,8 @@ void TouchCollision(int left, int top, int right, int bottom);
 void BoxCollision(int left, int top, int right, int bottom);  // Standard
 void BoxCollision2(int left, int top, int right, int bottom); // Updated (?)
 void PlatformCollision(int left, int top, int right, int bottom);
+void BoxCollision3(int left, int top, int right, int bottom); // Added in Origins Plus
+void EnemyCollision(int left, int top, int right, int bottom); // Added in Origins Plus
 
 void ObjectFloorCollision(int xOffset, int yOffset, int cPath);
 void ObjectLWallCollision(int xOffset, int yOffset, int cPath);
@@ -97,5 +114,6 @@ void ObjectFloorGrip(int xOffset, int yOffset, int cPath);
 void ObjectLWallGrip(int xOffset, int yOffset, int cPath);
 void ObjectRoofGrip(int xOffset, int yOffset, int cPath);
 void ObjectRWallGrip(int xOffset, int yOffset, int cPath);
+void ObjectEntityGrip(int direction, int extendBottomCol, int effect); // Added in Origins Plus
 
 #endif // !COLLISION_H
