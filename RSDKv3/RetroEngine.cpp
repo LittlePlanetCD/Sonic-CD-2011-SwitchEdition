@@ -517,6 +517,41 @@ int GetXMLAttributeValueInt(const tinyxml2::XMLAttribute *attributePtr) { return
 bool GetXMLAttributeValueBool(const tinyxml2::XMLAttribute *attributePtr) { return attributePtr->BoolValue(); }
 const char *GetXMLAttributeValueString(const tinyxml2::XMLAttribute *attributePtr) { return attributePtr->Value(); }
 
+void RetroEngine::LoadXMLWindowText()
+{
+    FileInfo info;
+    for (int m = 0; m < (int)modList.size(); ++m) {
+        if (!modList[m].active)
+            continue;
+
+        SetActiveMod(m);
+        if (LoadFile("Data/Game/Game.xml", &info)) {
+            tinyxml2::XMLDocument *doc = new tinyxml2::XMLDocument;
+
+            char *xmlData = new char[info.fileSize + 1];
+            FileRead(xmlData, info.fileSize);
+            xmlData[info.fileSize] = 0;
+
+            bool success = doc->Parse(xmlData) == tinyxml2::XML_SUCCESS;
+
+            if (success) {
+                const tinyxml2::XMLElement *gameElement  = FirstXMLChildElement(doc, nullptr, "game");
+                const tinyxml2::XMLElement *titleElement = FirstXMLChildElement(doc, gameElement, "title");
+                if (titleElement) {
+                    const tinyxml2::XMLAttribute *nameAttr = FindXMLAttribute(titleElement, "name");
+                    if (nameAttr)
+                        StrCopy(gameWindowText, GetXMLAttributeValueString(nameAttr));
+                }
+            }
+
+            delete[] xmlData;
+            delete doc;
+
+            CloseFile();
+        }
+    }
+    SetActiveMod(-1);
+}
 void RetroEngine::LoadXMLVariables()
 {
     FileInfo info;
@@ -990,17 +1025,10 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
             FileRead(&fileBuffer2, 1);
             globalVariables[v] += fileBuffer2;
         }
-
-        SetGlobalVariableByName("Options.DevMenuFlag", false);
-        if (devMenu) {
-            SetGlobalVariableByName("Options.DevMenuFlag", true);
-        }
-#if RETRO_USE_MOD_LOADER
-        SetGlobalVariableByName("Engine.Standalone", true);
+        
+        SetGlobalVariableByName("Options.DevMenuFlag", devMenu ? 1 : 0);
+        SetGlobalVariableByName("Engine.PlatformId", RETRO_GAMEPLATFORMID);
         SetGlobalVariableByName("Engine.DeviceType", RETRO_GAMEPLATFORM);
-#endif
-
-        SetGlobalVariableByName("Engine.PlatformID", RETRO_GAMEPLATFORMID);
 #if !RETRO_USE_ORIGINAL_CODE
 		SetGlobalVariableByName("Config.IsPremiumUser", 1);			// this gets around the game over ui lol
 #endif
@@ -1074,12 +1102,17 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
 #endif
 
         CloseFile();
+
 #if RETRO_USE_MOD_LOADER
+        LoadXMLWindowText();
         LoadXMLVariables();
         LoadXMLPalettes();
         LoadXMLObjects();
         LoadXMLPlayers(NULL);
         LoadXMLStages(NULL, 0);
+
+        SetGlobalVariableByName("Engine.Standalone", 1);
+        SetGlobalVariableByName("game.hasPlusDLC", 0); // Just force to false for now. TODO: Add a proper check
 #endif
 
 #if !RETRO_USE_ORIGINAL_CODE
