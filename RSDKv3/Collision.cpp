@@ -10,6 +10,37 @@ CollisionSensor sensors[6];
 
 CollisionStore collisionStorage[2];
 
+
+const int hammerJumpHitbox[] = {
+    -25, -25,  25,  25,
+    -25, -25,  25,  25,
+    -25, -25,  25,  25,
+    -25, -25,  25,  25
+};
+
+const int hammerDashHitbox[] = { 
+     -10, -17, 23, 17,
+     -23, -17, 10, 17,
+     -18, -24, 10, 17,
+     -10, -26, 25, 17,
+     -10, -17, 23, 17,
+     -23, -17, 10, 17,
+     -18, -24, 10, 17,
+     -10, -26, 25, 17
+};
+
+const int chibiHammerJumpHitbox[] = {
+    -15, -11, 15, 20,
+    -15, -11, 15, 20,
+};
+
+const int chibiHammerDashHitbox[] = {
+    -14, -12, 8, 12,
+    -10, -12, 8, 12,
+     -8, -12,16, 12
+};
+
+
 #if !RETRO_USE_ORIGINAL_CODE
 byte showHitboxes = 0;
 
@@ -2828,7 +2859,6 @@ void PlatformCollision(int left, int top, int right, int bottom)
     }
 #endif
 }
-
 void BoxCollision3(int left, int top, int right, int bottom)
 {
     Player *player              = &playerList[activePlayer];
@@ -2963,11 +2993,85 @@ void BoxCollision3(int left, int top, int right, int bottom)
     }
 #endif
 }
-
+// Note for those that care: This is not a direct decomp of this function
+// We did try to make one, but the original function was too much of a mess to comprehend fully, so we opted to instead take what we could understand from it and make a new one that replicates the behavior the best we could
+// If anyone out there wants to take a shot at fully decompiling the original function, feel free to do so and send a PR, but this should be good enough as is
 void EnemyCollision(int left, int top, int right, int bottom)
 {
     TouchCollision(left, top, right, bottom);
-    if (scriptEng.checkResult == 0) {
-        // TODO: insert something about Amy's hammer hitboxes here
+
+    Player *player       = &playerList[activePlayer];
+
+    int hammerHitboxLeft   = 0;
+    int hammerHitboxRight  = 0;
+    int hammerHitboxTop    = 0;
+    int hammerHitboxBottom = 0;
+
+#if !RETRO_USE_ORIGINAL_CODE
+    bool miniPlayerFlag = GetGlobalVariableByName("Mini_PlayerFlag");
+    sbyte playerAmy     = GetGlobalVariableByName("PLAYER_AMY") ? GetGlobalVariableByName("PLAYER_AMY") : 5;
+    sbyte aniHammerJump = GetGlobalVariableByName("ANI_HAMMER_JUMP") ? GetGlobalVariableByName("ANI_HAMMER_JUMP") : 45;
+    sbyte aniHammerDash = GetGlobalVariableByName("ANI_HAMMER_DASH") ? GetGlobalVariableByName("ANI_HAMMER_DASH") : 46;
+#else
+    bool mini_PlayerFlag = globalVariables[62];
+    sbyte playerAmy      = 5;
+    sbyte aniHammerJump  = 45;
+    sbyte aniHammerDash  = 46;
+#endif
+
+    collisionLeft         = player->XPos >> 16;
+    collisionTop          = player->YPos >> 16;
+    collisionRight        = collisionLeft;
+    collisionBottom       = collisionTop;
+
+    if (!scriptEng.checkResult) {
+        if (playerListPos == playerAmy) {
+            if (player->boundEntity->animation == aniHammerDash) {
+                int frame          = (miniPlayerFlag ? player->boundEntity->frame % 3 : player->boundEntity->frame % 8) * 4;
+                hammerHitboxLeft   = miniPlayerFlag ? chibiHammerDashHitbox[frame] : hammerDashHitbox[frame];
+                hammerHitboxTop    = miniPlayerFlag ? chibiHammerDashHitbox[frame + 1] : hammerDashHitbox[frame + 1];
+                hammerHitboxRight  = miniPlayerFlag ? chibiHammerDashHitbox[frame + 2] : hammerDashHitbox[frame + 2];
+                hammerHitboxBottom = miniPlayerFlag ? chibiHammerDashHitbox[frame + 3] : hammerDashHitbox[frame + 3];
+            }
+            if (player->boundEntity->animation == aniHammerJump) {
+                int frame          = (miniPlayerFlag ? player->boundEntity->frame % 2 : player->boundEntity->frame % 4) * 4;
+                hammerHitboxLeft   = miniPlayerFlag ? chibiHammerJumpHitbox[frame]     : hammerJumpHitbox[frame];
+                hammerHitboxTop    = miniPlayerFlag ? chibiHammerJumpHitbox[frame + 1] : hammerJumpHitbox[frame + 1];
+                hammerHitboxRight  = miniPlayerFlag ? chibiHammerJumpHitbox[frame + 2] : hammerJumpHitbox[frame + 2];
+                hammerHitboxBottom = miniPlayerFlag ? chibiHammerJumpHitbox[frame + 3] : hammerJumpHitbox[frame + 3];
+            }
+            if (player->boundEntity->direction) {
+                int storeHitboxLeft =  hammerHitboxLeft;
+                hammerHitboxLeft    = -hammerHitboxRight;
+                hammerHitboxRight   = -storeHitboxLeft;
+            }
+            scriptEng.checkResult = collisionRight + hammerHitboxRight > left && collisionLeft + hammerHitboxLeft < right
+                                    && collisionBottom + hammerHitboxBottom > top && collisionTop + hammerHitboxTop < bottom;
+        }
     }
+
+#if !RETRO_USE_ORIGINAL_CODE
+    if (showHitboxes) {
+        Entity *entity = &objectEntityList[objectLoop];
+        left -= entity->XPos >> 16;
+        top -= entity->YPos >> 16;
+        right -= entity->XPos >> 16;
+        bottom -= entity->YPos >> 16;
+
+        Hitbox *playerHitbox = getPlayerHitbox(player);
+
+        int thisHitboxID = AddDebugHitbox(H_TYPE_TOUCH, entity, left, top, right, bottom);
+        if (thisHitboxID >= 0 && scriptEng.checkResult)
+            debugHitboxList[thisHitboxID].collision |= 1;
+        int otherHitboxID    = AddDebugHitbox(H_TYPE_HAMMER, NULL, hammerHitboxLeft, hammerHitboxTop, hammerHitboxRight, hammerHitboxBottom);
+            AddDebugHitbox(H_TYPE_TOUCH, NULL, playerHitbox->left[0], playerHitbox->top[0], playerHitbox->right[0], playerHitbox->bottom[0]);
+        if (otherHitboxID >= 0) {
+            debugHitboxList[otherHitboxID].XPos = player->XPos;
+            debugHitboxList[otherHitboxID].YPos = player->YPos;
+
+            if (scriptEng.checkResult)
+                debugHitboxList[otherHitboxID].collision |= 1;
+        }
+    }
+#endif
 }

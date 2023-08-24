@@ -41,6 +41,7 @@ struct CollisionSensor {
     bool collided;
 };
 
+// Introduced in Origins Plus
 struct CollisionStore {
     int entityNo;
     sbyte type;
@@ -67,7 +68,7 @@ struct DebugHitboxInfo {
 };
 
 
-enum DebugHitboxTypes { H_TYPE_TOUCH, H_TYPE_BOX, H_TYPE_PLAT, H_TYPE_FINGER};
+enum DebugHitboxTypes { H_TYPE_TOUCH, H_TYPE_BOX, H_TYPE_PLAT, H_TYPE_FINGER, H_TYPE_HAMMER};
 
 extern byte showHitboxes;
 extern int debugHitboxCount;
