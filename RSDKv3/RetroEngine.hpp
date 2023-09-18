@@ -11,7 +11,7 @@
 
 #define RETRO_USE_MOD_LOADER (!RETRO_USE_ORIGINAL_CODE && 1)
 // Forces all DLC flags to be disabled, this should be enabled in any public releases
-#define RSDK_AUTOBUILD (1)
+#define RSDK_AUTOBUILD (0)
 
 // ================
 // STANDARD LIBS
