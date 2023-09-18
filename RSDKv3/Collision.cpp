@@ -10,7 +10,6 @@ CollisionSensor sensors[6];
 
 CollisionStore collisionStorage[2];
 
-
 const int hammerJumpHitbox[] = {
     -25, -25,  25,  25,
     -25, -25,  25,  25,
@@ -39,7 +38,6 @@ const int chibiHammerDashHitbox[] = {
     -10, -12, 8, 12,
      -8, -12,16, 12
 };
-
 
 #if !RETRO_USE_ORIGINAL_CODE
 byte showHitboxes = 0;
@@ -88,6 +86,7 @@ int AddDebugHitbox(byte type, Entity *entity, int left, int top, int right, int 
     return -1;
 }
 #endif
+
 inline Hitbox *getPlayerHitbox(Player *player)
 {
     AnimationFile *animFile = player->animationFile;
@@ -1940,13 +1939,14 @@ void ObjectLWallGrip(int xOffset, int yOffset, int cPath)
     int YPos              = (entity->YPos >> 16) + yOffset;
     int startX            = XPos;
     XPos                  = XPos - 16;
+    int chunk             = xOffset;
     for (int i = 3; i > 0; i--) {
         if (XPos > 0 && XPos < stageLayouts[0].xsize << 7 && YPos > 0 && YPos < stageLayouts[0].ysize << 7 && !scriptEng.checkResult) {
             int chunkX    = XPos >> 7;
             int tileX     = (XPos & 0x7F) >> 4;
             int chunkY    = YPos >> 7;
             int tileY     = (YPos & 0x7F) >> 4;
-            int chunk     = (stageLayouts[0].tiles[chunkX + (chunkY << 8)] << 6) + tileX + (tileY << 3);
+            chunk         = (stageLayouts[0].tiles[chunkX + (chunkY << 8)] << 6) + tileX + (tileY << 3);
             int tileIndex = tiles128x128.tileIndex[chunk];
             if (tiles128x128.collisionFlags[cPath][chunk] < SOLID_NONE) {
                 switch (tiles128x128.direction[chunk]) {
@@ -1997,7 +1997,7 @@ void ObjectLWallGrip(int xOffset, int yOffset, int cPath)
             return;
         }
         entity->XPos          = (startX - xOffset) << 16;
-        scriptEng.checkResult = false;
+        scriptEng.checkResult = tiles128x128.collisionFlags[cPath][chunk] == 1;
     }
 }
 void ObjectRoofGrip(int xOffset, int yOffset, int cPath)
@@ -2078,13 +2078,14 @@ void ObjectRWallGrip(int xOffset, int yOffset, int cPath)
     int YPos              = (entity->YPos >> 16) + yOffset;
     int startX            = XPos;
     XPos                  = XPos + 16;
+    int chunk             = xOffset;
     for (int i = 3; i > 0; i--) {
         if (XPos > 0 && XPos < stageLayouts[0].xsize << 7 && YPos > 0 && YPos < stageLayouts[0].ysize << 7 && !scriptEng.checkResult) {
             int chunkX    = XPos >> 7;
             int tileX     = (XPos & 0x7F) >> 4;
             int chunkY    = YPos >> 7;
             int tileY     = (YPos & 0x7F) >> 4;
-            int chunk     = (stageLayouts[0].tiles[chunkX + (chunkY << 8)] << 6) + tileX + (tileY << 3);
+            chunk         = (stageLayouts[0].tiles[chunkX + (chunkY << 8)] << 6) + tileX + (tileY << 3);
             int tileIndex = tiles128x128.tileIndex[chunk];
             if (tiles128x128.collisionFlags[cPath][chunk] < SOLID_NONE) {
                 switch (tiles128x128.direction[chunk]) {
@@ -2135,7 +2136,7 @@ void ObjectRWallGrip(int xOffset, int yOffset, int cPath)
             return;
         }
         entity->XPos          = (startX - xOffset) << 16;
-        scriptEng.checkResult = false;
+        scriptEng.checkResult = tiles128x128.collisionFlags[cPath][chunk] == 1;
     }
 }
 void ObjectEntityGrip(int direction, int extendBottomCol, int effect)
@@ -3022,6 +3023,11 @@ void BoxCollision3(int left, int top, int right, int bottom)
 void EnemyCollision(int left, int top, int right, int bottom)
 {
     TouchCollision(left, top, right, bottom);
+
+#if RSDK_AUTOBUILD
+    // Skip the hammer hitboxes on autobuilds, just in case
+    return;
+#endif
 
     Player *player = &playerList[activePlayer];
 

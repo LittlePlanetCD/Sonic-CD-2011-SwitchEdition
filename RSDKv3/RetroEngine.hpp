@@ -10,6 +10,8 @@
 #define RETRO_USE_ORIGINAL_CODE (0)
 
 #define RETRO_USE_MOD_LOADER (!RETRO_USE_ORIGINAL_CODE && 1)
+// Forces all DLC flags to be disabled, this should be enabled in any public releases
+#define RSDK_AUTOBUILD (1)
 
 // ================
 // STANDARD LIBS
@@ -495,7 +497,7 @@ public:
 
     char gameWindowText[0x40];
     char gameDescriptionText[0x100];
-    const char *gameVersion = "1.3.1";
+    const char *gameVersion = "1.3.2";
     const char *gamePlatform;
 
     const char *gameRenderTypes[2] = { "SW_Rendering", "HW_Rendering" };
