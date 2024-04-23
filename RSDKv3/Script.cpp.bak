@@ -876,9 +876,9 @@ void CheckAliasText(char *text)
         AddTextMenuEntry(&gameMenu[0], "SCRIPT PARSING FAILED");
         AddTextMenuEntry(&gameMenu[0], " ");
         AddTextMenuEntry(&gameMenu[0], "TOO MANY ALIASES");
-        AddTextMenuEntry(&gameMenu[0], " ");
-        AddTextMenuEntry(&gameMenu[0], "REDUCE ALIAS COUNT TO 96");
-        AddTextMenuEntry(&gameMenu[0], "IN THE SCRIPT BELOW");
+		AddTextMenuEntry(&gameMenu[0], " ");
+		AddTextMenuEntry(&gameMenu[0], "REDUCE ALIAS COUNT TO 96");
+		AddTextMenuEntry(&gameMenu[0], "IN THE SCRIPT BELOW");
         Engine.gameMode = ENGINE_SCRIPTERROR;
         return;
     }

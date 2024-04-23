@@ -495,7 +495,7 @@ void InitUserdata()
             else if (platype == 1)
                 Engine.gamePlatform = "Mobile";
         }
-        if (!ini.GetBool("Game", "trialMode", &Engine.trialMode))
+		if (!ini.GetBool("Game", "trialMode", &Engine.trialMode))
             Engine.trialMode = false;
 
         if (!ini.GetBool("Window", "FullScreen", &Engine.startFullScreen))

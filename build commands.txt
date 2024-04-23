@@ -1,0 +1,3 @@
+pacman -S $(pacman -Sqss switch-*) - get all switch packages. may be dkp-pacman when on linux.
+
+make PLATFORM=Switch -j#   - ran when in the decomp root folder, -j does core count, so the # should be the amount of cores you have.
