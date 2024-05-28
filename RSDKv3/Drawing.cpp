@@ -4812,7 +4812,7 @@ void SetFadeHQ(int R, int G, int B, int A)
     // Not Avaliable in HW mode
 }
 
-void DrawTintRectangle(int XPos, int YPos, int width, int height)
+void DrawTintRectangle(uint XPos, uint YPos, int width, int height)
 {
     if (renderType == RENDER_SW) {
         if (width + XPos > GFX_LINESIZE)
@@ -4828,13 +4828,13 @@ void DrawTintRectangle(int XPos, int YPos, int width, int height)
             height += YPos;
             YPos = 0;
         }
-        if (width <= 0 || height <= 0)
+        if (width < 0 || height < 0)
             return;
 
         int yOffset = GFX_LINESIZE - width;
         for (ushort *frameBufferPtr = &Engine.frameBuffer[XPos + GFX_LINESIZE * YPos];; frameBufferPtr += yOffset) {
             height--;
-            if (!height)
+            if (height < 0)
                 break;
 
             int w = width;

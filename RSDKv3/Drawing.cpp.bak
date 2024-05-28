@@ -1038,12 +1038,12 @@ void ReleaseRenderDevice()
     }
 
 #if RETRO_USING_OPENGL
-	if (Engine.glContext) {
-		for (int i = 0; i < HW_TEXTURE_COUNT; i++) glDeleteTextures(1, &gfxTextureID[i]);
+    if (Engine.glContext) {
+        for (int i = 0; i < HW_TEXTURE_COUNT; i++) glDeleteTextures(1, &gfxTextureID[i]);
 #if RETRO_USING_SDL2
-		SDL_GL_DeleteContext(Engine.glContext);
+        SDL_GL_DeleteContext(Engine.glContext);
 #endif
-	}
+    }
 #endif
 
 #if RETRO_USING_SDL2
@@ -1952,7 +1952,7 @@ void DrawStageGFX()
     // Hacky fix for Tails Object not working properly on non-Origins bytecode
     if (forceUseScripts || GetGlobalVariableByName("NOTIFY_1P_VS_SELECT") != 0)
 #endif
-		DrawObjectList(7); // Extra Origins draw list (who knows why it comes before 6)
+    DrawObjectList(7); // Extra Origins draw list (who knows why it comes before 6)
     DrawObjectList(6);
 
 #if !RETRO_USE_ORIGINAL_CODE
