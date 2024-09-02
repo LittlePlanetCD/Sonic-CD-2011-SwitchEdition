@@ -115,6 +115,11 @@ SOURCES	+=	\
 # Theoraplay sources
 SOURCES +=	dependencies/all/theoraplay/theoraplay
 
+ifneq ($(FORCE_CASE_INSENSITIVE),)
+	CXXFLAGS_ALL += -DFORCE_CASE_INSENSITIVE
+	SOURCES += RSDKv3/fcaseopen
+endif
+
 PKGSUFFIX ?= $(SUFFIX)
 
 BINPATH = $(OUTDIR)/$(NAME)$(SUFFIX)
