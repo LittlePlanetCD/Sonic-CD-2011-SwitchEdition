@@ -77,10 +77,19 @@ bool ProcessEvents()
                 if (touches <= 1) { // Touch always takes priority over mouse
                     uint state = SDL_GetMouseState(&touchX[0], &touchY[0]);
 
-                    int width = 0, height = 0;
+                    int width = 0, height = 0, pixW = 0, pixH = 0;
                     SDL_GetWindowSize(Engine.window, &width, &height);
-                    touchX[0] = ((touchX[0] - viewOffsetX) / (float)width) * SCREEN_XSIZE;
-                    touchY[0] = (touchY[0] / (float)height) * SCREEN_YSIZE;
+#if RETRO_USING_OPENGL
+                    SDL_GL_GetDrawableSize(Engine.window, &pixW, &pixH);
+#else
+                    SDL_GetRendererOutputSize(Engine.renderer, &pixW, &pixH);
+#endif
+
+                    float scaleX = (float)pixW / (float)width;
+                    float scaleY = (float)pixH / (float)height;
+
+                    touchX[0] = ((touchX[0] - viewOffsetX / scaleX) / ((float)width - viewOffsetX)) * SCREEN_XSIZE;
+                    touchY[0] = ((touchY[0] - viewOffsetY / scaleY) / ((float)height - viewOffsetY)) * SCREEN_YSIZE;
 
                     touchDown[0] = state & SDL_BUTTON_LMASK;
                     if (touchDown[0])
@@ -146,6 +155,8 @@ bool ProcessEvents()
                             stageListPosition = 0;
                             stageMode         = STAGEMODE_LOAD;
                             Engine.gameMode   = ENGINE_MAINGAME;
+                            if (Engine.highResMode)
+                                Engine.highResMode = false;
                         }
                         break;
 
@@ -164,6 +175,8 @@ bool ProcessEvents()
                             Engine.gameMode = ENGINE_MAINGAME;
                             SetGlobalVariableByName("LampPost.Check", 0);
                             SetGlobalVariableByName("Warp.XPos", 0);
+                            if (Engine.highResMode)
+                                Engine.highResMode = false;
                         }
                         break;
 
@@ -183,6 +196,8 @@ bool ProcessEvents()
                             Engine.gameMode = ENGINE_MAINGAME;
                             SetGlobalVariableByName("LampPost.Check", 0);
                             SetGlobalVariableByName("Warp.XPos", 0);
+                            if (Engine.highResMode)
+                                Engine.highResMode = false;
                         }
                         break;
 
@@ -453,7 +468,43 @@ void RetroEngine::Run()
                             if (ProcessVideo() == 1)
                                 gameMode = ENGINE_MAINGAME;
                             break;
+                            
+#if RETRO_USE_MOD_LOADER
+                        case ENGINE_INITMODMENU:
+                            Engine.LoadGameConfig("Data/Game/GameConfig.bin");
+                            InitDevMenu();
 
+                            ResetCurrentStageFolder();
+                            
+                            SetupTextMenu(&gameMenu[0], 0);
+                            AddTextMenuEntry(&gameMenu[0], "MOD LIST");
+                            SetupTextMenu(&gameMenu[1], 0);
+                            InitMods();
+
+                            char buffer[0x100];
+                            for (int m = 0; m < modList.size(); ++m) {
+                                StrCopy(buffer, modList[m].name.c_str());
+                                StrAdd(buffer, ": ");
+                                StrAdd(buffer, modList[m].active ? "  Active" : "Inactive");
+                                AddTextMenuEntry(&gameMenu[1], buffer);
+                                gameMenu[1].entryHighlight[m] = false;
+                            }
+
+                            gameMenu[1].alignment      = 1;
+                            gameMenu[1].selectionCount = 3;
+                            gameMenu[1].selection1     = 0;
+                            if (gameMenu[1].rowCount > 18)
+                                gameMenu[1].visibleRowCount = 18;
+                            else
+                                gameMenu[1].visibleRowCount = 0;
+
+                            gameMenu[0].alignment        = 2;
+                            gameMenu[0].selectionCount   = 1;
+                            gameMenu[1].timer            = 0;
+                            gameMenu[1].visibleRowOffset = 0;
+                            stageMode                    = DEVMENU_MODMENU;
+                            break;
+#endif
                         default: break;
                     }
                 }
@@ -897,7 +948,9 @@ void RetroEngine::LoadXMLPlayers(TextMenu *menu)
                             if (nameAttr)
                                 plrName = GetXMLAttributeValueString(nameAttr);
 
-                            if (menu)
+                            if (playerCount >= PLAYERNAME_COUNT)
+                                PrintLog("Failed to add dev menu character '%s' (max limit reached)", plrName);
+                            else if (menu)
                                 AddTextMenuEntry(menu, plrName);
                             else
                                 StrCopy(playerNames[playerCount++], plrName);
@@ -1070,9 +1123,6 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
         SetGlobalVariableByName("Options.DevMenuFlag", devMenu ? 1 : 0);
         SetGlobalVariableByName("Engine.PlatformId", RETRO_GAMEPLATFORMID);
         SetGlobalVariableByName("Engine.DeviceType", RETRO_GAMEPLATFORM);
-#if !RETRO_USE_ORIGINAL_CODE
-        SetGlobalVariableByName("Config.IsPremiumUser", 1);			// this gets around the game over ui lol
-#endif
 
         // Read SFX
         byte sfxCount = 0;
@@ -1085,6 +1135,13 @@ bool RetroEngine::LoadGameConfig(const char *filePath)
         // Read Player Names
         byte plrCount = 0;
         FileRead(&plrCount, 1);
+#if RETRO_USE_MOD_LOADER
+        // Check for max player limit
+        if (plrCount >= PLAYERNAME_COUNT) {
+            PrintLog("WARNING: GameConfig attempted to exceed the player limit, truncating to supported limit");
+            plrCount = PLAYERNAME_COUNT;
+        }
+#endif
         for (byte p = 0; p < plrCount; ++p) {
             FileRead(&fileBuffer, 1);
             FileRead(&strBuffer, fileBuffer);
@@ -1402,6 +1459,14 @@ void RetroEngine::Callback(int callbackID)
         case NOTIFY_STATS_CHARA_ACTION2: PrintLog("NOTIFY: StatsCharaAction2() -> %d, %d, %d", notifyParam1, notifyParam2, notifyParam3); break;
 
         // Sega Forever stuff
+        case CALLBACK_STARTGAME:
+            PrintLog("Callback: startGame()");
+
+            // Set lives count and the like
+            SetGlobalVariableByName("Config.NumOfLives", 3);
+            SetGlobalVariableByName("Config.IsPremiumUser", 1);
+            break;
+        case CALLBACK_SHOWURL: PrintLog("Callback: showURL(\"https://www.sega.com\")"); break;
         case CALLBACK_SHOWMENU_2: PrintLog("Callback: showMenu(2)"); break;
         case CALLBACK_SHOWHELPCENTER: PrintLog("Callback: Show Help Center"); break;
         case CALLBACK_CHANGEADSTYPE: PrintLog("Callback: Change Ads Type"); break;
@@ -1439,6 +1504,49 @@ void RetroEngine::Callback(int callbackID)
 #if RETRO_USE_MOD_LOADER
         case CALLBACK_SET1P: activePlayerCount = 1; break;
         case CALLBACK_SET2P: activePlayerCount = 2; break;
+        case CALLBACK_GETWINDOWINFO:
+            SetGlobalVariableByName("Engine.Fullscreen", Engine.isFullScreen);
+            SetGlobalVariableByName("Engine.Borderless", Engine.borderless);
+            SetGlobalVariableByName("Engine.VSync", Engine.vsync);
+            SetGlobalVariableByName("Engine.ScalingMode", Engine.scalingMode);
+            SetGlobalVariableByName("Engine.WindowScale", Engine.windowScale);
+            SetGlobalVariableByName("Engine.ScreenWidth", SCREEN_XSIZE);
+            SetGlobalVariableByName("Engine.HardwareRenderer", Engine.gameRenderType == "HW_Rendering");            
+            break;
+        case CALLBACK_SETWINDOWCHANGES:
+            Engine.startFullScreen = Engine.isFullScreen; // Account for f4 toggle
+            for (int v = 0; v < globalVariablesCount; ++v) {
+                if (StrComp("Engine.Fullscreen", globalVariableNames[v])){
+                    Engine.startFullScreen = globalVariables[v];
+                    Engine.isFullScreen = Engine.startFullScreen;
+                }
+                else if (StrComp("Engine.Borderless", globalVariableNames[v]))
+                    Engine.borderless = globalVariables[v];
+                else if (StrComp("Engine.VSync", globalVariableNames[v]))
+                    Engine.vsync = globalVariables[v];
+                else if (StrComp("Engine.ScalingMode", globalVariableNames[v]))
+                    Engine.scalingMode = globalVariables[v];
+                else if (StrComp("Engine.WindowScale", globalVariableNames[v]))
+                    Engine.windowScale = globalVariables[v];
+                else if (StrComp("Engine.ScreenWidth", globalVariableNames[v])){
+                    SCREEN_XSIZE = globalVariables[v];
+                    SCREEN_XSIZE_CONFIG = SCREEN_XSIZE;
+                }
+                else if (StrComp("Engine.HardwareRenderer", globalVariableNames[v]))
+                    Engine.gameRenderType = gameRenderTypes[globalVariables[v]];
+            }
+#if RETRO_USING_OPENGL
+            for (int i = 0; i < HW_TEXTURE_COUNT; ++i) {
+                glDeleteTextures(1, &gfxTextureID[i]);
+            }
+#endif
+            ReleaseRenderDevice();
+            InitRenderDevice();
+            break;
+        case CALLBACK_OPENMODMENU:
+            Engine.gameMode      = ENGINE_INITMODMENU;
+            Engine.modMenuCalled = true;
+            break;
 #endif
     }
 }

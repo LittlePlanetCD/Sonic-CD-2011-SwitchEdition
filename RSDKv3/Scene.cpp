@@ -122,6 +122,9 @@ void ProcessStage(void)
 
     switch (stageMode) {
         case STAGEMODE_LOAD: // Startup
+#if !RETRO_USE_ORIGINAL_CODE
+            Engine.Callback(CALLBACK_STARTGAME); // its dead, jim. note: i would have just called the SetGlobal function to change IsPremiumUser, but this was just added to master, sooooooooooooo...
+#endif
             fadeMode = 0;
             SetActivePalette(0, 0, 256);
 
